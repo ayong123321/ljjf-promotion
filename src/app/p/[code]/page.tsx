@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Send, CheckCircle } from 'lucide-react';
+import { Send, CheckCircle, MapPin, MessageCircle, Copy } from 'lucide-react';
 
 export default function PromotionPage() {
   const params = useParams();
@@ -83,6 +83,11 @@ export default function PromotionPage() {
     }
   };
 
+  const copyWechat = (wechat: string) => {
+    navigator.clipboard.writeText(wechat);
+    toast.success('微信号已复制');
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
@@ -124,6 +129,47 @@ export default function PromotionPage() {
               <p className="text-gray-700 whitespace-pre-wrap">{content.description}</p>
             </CardContent>
           )}
+        </Card>
+
+        {/* 门店信息 */}
+        <Card className="mb-6 shadow-lg bg-gradient-to-r from-orange-50 to-pink-50 border-orange-200">
+          <CardContent className="pt-6">
+            <div className="text-center mb-4">
+              <p className="text-lg font-medium text-gray-800">
+                有假发需求的朋友，欢迎来到我们线下门店
+              </p>
+            </div>
+            
+            <div className="space-y-4">
+              {/* 门店地址 */}
+              <div className="flex items-start gap-3 p-3 bg-white rounded-lg">
+                <MapPin className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-gray-800">门店地址</p>
+                  <p className="text-gray-600">长清区永安小区12号楼对面（永安玲姐假发）</p>
+                </div>
+              </div>
+              
+              {/* 微信号 */}
+              <div className="flex items-center justify-between p-3 bg-white rounded-lg">
+                <div className="flex items-center gap-3">
+                  <MessageCircle className="h-5 w-5 text-green-500" />
+                  <div>
+                    <p className="font-medium text-gray-800">微信咨询</p>
+                    <p className="text-green-600 font-medium">ljjf2025</p>
+                  </div>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => copyWechat('ljjf2025')}
+                >
+                  <Copy className="h-4 w-4 mr-1" />
+                  复制
+                </Button>
+              </div>
+            </div>
+          </CardContent>
         </Card>
 
         {/* 联系表单 */}
