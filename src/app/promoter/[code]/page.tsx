@@ -7,8 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { toast } from 'sonner';
-import { Users, Eye, Copy, Check, Link as LinkIcon, UserCheck } from 'lucide-react';
+import { Users, Eye, Copy, Check, Link as LinkIcon, UserCheck, Download, QrCode, AlertCircle, MessageCircle } from 'lucide-react';
 
 interface PromoterData {
   promoter: {
@@ -46,6 +47,7 @@ export default function PromoterPage() {
   const [data, setData] = useState<PromoterData | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState('');
 
   useEffect(() => {
     fetchPromoterData();
@@ -57,6 +59,9 @@ export default function PromoterPage() {
       const result = await res.json();
       if (result.data) {
         setData(result.data);
+        // 生成二维码URL
+        const promotionUrl = `${window.location.origin}/p/${code}`;
+        setQrCodeUrl(`/api/qrcode?url=${encodeURIComponent(promotionUrl)}`);
       } else {
         toast.error(result.error || '获取数据失败');
       }
@@ -71,8 +76,18 @@ export default function PromoterPage() {
     const url = `${window.location.origin}/p/${code}`;
     navigator.clipboard.writeText(url);
     setCopied(true);
-    toast.success('推广链接已复制，快去发朋友圈吧！');
+    toast.success('推广链接已复制！');
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const downloadQRCode = () => {
+    const link = document.createElement('a');
+    link.href = qrCodeUrl;
+    link.download = `推广二维码_${code}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('二维码已下载，可以发朋友圈了！');
   };
 
   if (loading) {
@@ -103,15 +118,68 @@ export default function PromoterPage() {
         <p className="text-gray-600 mt-2">欢迎, {data.promoter.name}!</p>
       </div>
 
+      {/* 微信使用提示 */}
+      <Alert className="mb-6 border-orange-200 bg-orange-50">
+        <AlertCircle className="h-4 w-4 text-orange-600" />
+        <AlertTitle className="text-orange-800">微信使用说明</AlertTitle>
+        <AlertDescription className="text-orange-700">
+          <p className="mb-2">由于微信安全限制，直接发链接可能被拦截。推荐使用以下方式推广：</p>
+          <ol className="list-decimal list-inside space-y-1">
+            <li><strong>下载二维码图片</strong>，发朋友圈时配上二维码图片</li>
+            <li>在图片上添加文字说明，引导用户扫码</li>
+            <li>用户扫码后会自动跳转到推广页面</li>
+          </ol>
+        </AlertDescription>
+      </Alert>
+
+      {/* 推广二维码卡片 */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <QrCode className="h-5 w-5" />
+            推广二维码（推荐使用）
+          </CardTitle>
+          <CardDescription>
+            下载二维码图片发朋友圈，用户扫码即可访问
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col md:flex-row items-center gap-6">
+            {qrCodeUrl && (
+              <div className="border rounded-lg p-4 bg-white">
+                <img 
+                  src={qrCodeUrl} 
+                  alt="推广二维码" 
+                  className="w-48 h-48"
+                />
+              </div>
+            )}
+            <div className="flex-1 space-y-4">
+              <p className="text-gray-600">
+                扫描此二维码可以直接访问您的推广页面。
+                下载后发朋友圈效果更好！
+              </p>
+              <Button onClick={downloadQRCode} size="lg" className="w-full md:w-auto">
+                <Download className="h-4 w-4 mr-2" />
+                下载二维码图片
+              </Button>
+              <p className="text-sm text-gray-500">
+                提示：下载后在朋友圈发布时，可以配上吸引人的文案
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* 推广链接卡片 */}
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <LinkIcon className="h-5 w-5" />
-            我的推广链接
+            推广链接
           </CardTitle>
           <CardDescription>
-            复制此链接发到朋友圈，访客点击后会自动记录
+            复制链接在其他平台（如QQ、微博）使用
           </CardDescription>
         </CardHeader>
         <CardContent>

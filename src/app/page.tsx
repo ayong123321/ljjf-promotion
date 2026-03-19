@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings, Users, Eye } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Settings, Users, Eye, QrCode, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 
 export default function Home() {
@@ -13,6 +14,21 @@ export default function Home() {
             专业的推广分销溯源系统，让每一笔推广都有迹可循
           </p>
         </div>
+
+        {/* 微信使用提示 */}
+        <Alert className="mb-8 border-orange-200 bg-orange-50">
+          <AlertCircle className="h-4 w-4 text-orange-600" />
+          <AlertTitle className="text-orange-800">微信推广重要说明</AlertTitle>
+          <AlertDescription className="text-orange-700">
+            <p className="mb-2">由于微信安全机制，直接发送链接可能被拦截。请按以下方式使用：</p>
+            <ol className="list-decimal list-inside space-y-1">
+              <li>在管理后台创建推广者后，<strong>点击二维码图标下载二维码图片</strong></li>
+              <li>将二维码图片发给推广者</li>
+              <li>推广者在朋友圈发布二维码图片 + 吸引人的文案</li>
+              <li>用户扫码后会自动跳转到推广页面</li>
+            </ol>
+          </AlertDescription>
+        </Alert>
 
         <div className="grid gap-6 md:grid-cols-3">
           <Card className="hover:shadow-lg transition-shadow">
@@ -63,15 +79,43 @@ export default function Home() {
           </Card>
         </div>
 
-        <div className="mt-12 text-center text-sm text-gray-500">
-          <p>使用说明：</p>
-          <ol className="mt-2 space-y-1 list-decimal list-inside text-left max-w-md mx-auto">
-            <li>管理员创建推广者账号，获取专属推广码</li>
-            <li>推广者使用专属链接发朋友圈推广</li>
-            <li>访客点击链接，自动记录访客信息</li>
-            <li>访客可自愿留下微信号，方便后续联系</li>
-            <li>管理员和推广者均可查看推广数据</li>
-          </ol>
+        <div className="mt-12">
+          <h2 className="text-2xl font-bold mb-6 text-center">使用流程</h2>
+          <div className="grid gap-4 md:grid-cols-5">
+            <Card className="text-center p-4">
+              <div className="text-3xl font-bold text-purple-500 mb-2">1</div>
+              <p className="text-sm">管理员创建推广者账号</p>
+            </Card>
+            <Card className="text-center p-4">
+              <div className="text-3xl font-bold text-purple-500 mb-2">2</div>
+              <p className="text-sm">下载二维码图片发给推广者</p>
+            </Card>
+            <Card className="text-center p-4">
+              <div className="text-3xl font-bold text-purple-500 mb-2">3</div>
+              <p className="text-sm">推广者发朋友圈推广</p>
+            </Card>
+            <Card className="text-center p-4">
+              <div className="text-3xl font-bold text-purple-500 mb-2">4</div>
+              <p className="text-sm">访客扫码自动记录</p>
+            </Card>
+            <Card className="text-center p-4">
+              <div className="text-3xl font-bold text-purple-500 mb-2">5</div>
+              <p className="text-sm">查看数据和联系方式</p>
+            </Card>
+          </div>
+        </div>
+
+        <div className="mt-12 bg-white rounded-lg p-6 shadow">
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+            <QrCode className="h-5 w-5" />
+            微信推广技巧
+          </h2>
+          <ul className="space-y-2 text-gray-600">
+            <li>• <strong>使用二维码图片</strong>：比直接发链接更安全，不会被拦截</li>
+            <li>• <strong>配上吸引人的文案</strong>：如"限时优惠"、"扫码领福利"等</li>
+            <li>• <strong>多渠道推广</strong>：朋友圈、微信群、私聊都可以用同一个二维码</li>
+            <li>• <strong>及时跟进</strong>：看到访客留下微信号后及时联系</li>
+          </ul>
         </div>
       </div>
     </div>

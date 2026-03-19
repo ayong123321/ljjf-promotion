@@ -9,9 +9,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { toast } from 'sonner';
-import { Users, Image as ImageIcon, BarChart2, Plus, Eye, Copy, Check } from 'lucide-react';
+import { Users, Image as ImageIcon, BarChart2, Plus, Eye, Copy, Check, Download, QrCode, AlertCircle } from 'lucide-react';
 
 interface Promoter {
   id: number;
@@ -169,6 +169,17 @@ export default function AdminPage() {
     toast.success('推广者后台链接已复制');
   };
 
+  const downloadQRCode = (code: string) => {
+    const url = `/api/qrcode?url=${encodeURIComponent(`${window.location.origin}/p/${code}`)}`;
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `推广二维码_${code}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('二维码已下载');
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -183,6 +194,15 @@ export default function AdminPage() {
         <h1 className="text-3xl font-bold">假发店推广管理系统</h1>
         <p className="text-gray-600 mt-2">管理推广者、推广内容和查看统计数据</p>
       </div>
+
+      {/* 微信使用提示 */}
+      <Alert className="mb-6 border-orange-200 bg-orange-50">
+        <AlertCircle className="h-4 w-4 text-orange-600" />
+        <AlertTitle className="text-orange-800">微信推广说明</AlertTitle>
+        <AlertDescription className="text-orange-700">
+          由于微信安全限制，直接发链接可能被拦截。<strong>请下载二维码图片发给推广者</strong>，让他们用图片发朋友圈，效果更好！
+        </AlertDescription>
+      </Alert>
 
       <Tabs defaultValue="promoters" className="space-y-6">
         <TabsList>
@@ -246,7 +266,7 @@ export default function AdminPage() {
             <Card>
               <CardHeader>
                 <CardTitle>推广者列表</CardTitle>
-                <CardDescription>所有推广者及其专属推广码</CardDescription>
+                <CardDescription>所有推广者及其专属推广码，点击下载二维码</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -262,7 +282,16 @@ export default function AdminPage() {
                         <Button
                           size="sm"
                           variant="outline"
+                          onClick={() => downloadQRCode(promoter.unique_code)}
+                          title="下载二维码"
+                        >
+                          <QrCode className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
                           onClick={() => copyToClipboard(promoter.unique_code)}
+                          title="复制推广链接"
                         >
                           {copiedCode === promoter.unique_code ? (
                             <Check className="h-4 w-4" />
@@ -274,6 +303,7 @@ export default function AdminPage() {
                           size="sm"
                           variant="outline"
                           onClick={() => copyPromoterLink(promoter.unique_code)}
+                          title="推广者后台链接"
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
