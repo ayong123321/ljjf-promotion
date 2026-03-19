@@ -59,7 +59,6 @@ export default function PromoterPage() {
       const result = await res.json();
       if (result.data) {
         setData(result.data);
-        // 生成二维码URL
         const promotionUrl = `${window.location.origin}/p/${code}`;
         setQrCodeUrl(`/api/qrcode?url=${encodeURIComponent(promotionUrl)}`);
       } else {
@@ -110,6 +109,9 @@ export default function PromoterPage() {
   }
 
   const promotionUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/p/${code}`;
+  
+  // 筛选有微信号的访客
+  const visitorsWithWechat = data.visitorRecords.filter(v => v.wechat_id);
 
   return (
     <div className="container mx-auto p-6 max-w-4xl">
@@ -131,6 +133,46 @@ export default function PromoterPage() {
           </ol>
         </AlertDescription>
       </Alert>
+
+      {/* 留下微信号的访客 - 重点展示 */}
+      {visitorsWithWechat.length > 0 && (
+        <Card className="mb-6 border-2 border-green-200 bg-green-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-green-800">
+              <MessageCircle className="h-5 w-5" />
+              有访客留下微信号了！
+              <Badge variant="destructive">{visitorsWithWechat.length}</Badge>
+            </CardTitle>
+            <CardDescription className="text-green-600">以下访客已留下微信号，快去联系他们吧！</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {visitorsWithWechat.map((record) => (
+                <div key={record.id} className="flex items-center justify-between p-4 bg-white rounded-lg border border-green-200">
+                  <div>
+                    <div className="text-lg font-medium">
+                      微信号: <span className="text-green-600 font-bold">{record.wechat_id}</span>
+                    </div>
+                    <div className="text-sm text-gray-500 mt-1">
+                      访问时间: {new Date(record.created_at).toLocaleString('zh-CN')}
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => {
+                      navigator.clipboard.writeText(record.wechat_id!);
+                      toast.success('微信号已复制，快去微信添加吧！');
+                    }}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    复制微信号
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* 推广二维码卡片 */}
       <Card className="mb-6">
@@ -230,13 +272,13 @@ export default function PromoterPage() {
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className={data.stats.wechatSubmissions > 0 ? 'border-2 border-green-500 bg-green-50' : ''}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">微信号提交</CardTitle>
             <UserCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.stats.wechatSubmissions}</div>
+            <div className="text-2xl font-bold text-green-600">{data.stats.wechatSubmissions}</div>
             <p className="text-xs text-muted-foreground">留下联系方式的访客</p>
           </CardContent>
         </Card>
@@ -270,7 +312,12 @@ export default function PromoterPage() {
       {/* 访客记录 */}
       <Card>
         <CardHeader>
-          <CardTitle>访客记录</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            访客记录
+            {visitorsWithWechat.length > 0 && (
+              <Badge variant="destructive">{visitorsWithWechat.length}人留微信号</Badge>
+            )}
+          </CardTitle>
           <CardDescription>最近访问的访客信息</CardDescription>
         </CardHeader>
         <CardContent>
@@ -285,13 +332,25 @@ export default function PromoterPage() {
               </TableHeader>
               <TableBody>
                 {data.visitorRecords.slice(0, 20).map((record) => (
-                  <TableRow key={record.id}>
+                  <TableRow key={record.id} className={record.wechat_id ? 'bg-green-50' : ''}>
                     <TableCell className="font-mono text-sm">
                       {record.ip_address}
                     </TableCell>
                     <TableCell>
                       {record.wechat_id ? (
-                        <Badge variant="secondary">{record.wechat_id}</Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="default" className="bg-green-600">{record.wechat_id}</Badge>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              navigator.clipboard.writeText(record.wechat_id!);
+                              toast.success('微信号已复制');
+                            }}
+                          >
+                            复制
+                          </Button>
+                        </div>
                       ) : (
                         <span className="text-gray-400">未留下</span>
                       )}

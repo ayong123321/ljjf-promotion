@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { toast } from 'sonner';
-import { Users, Image as ImageIcon, BarChart2, Plus, Eye, Copy, Check, Download, QrCode, AlertCircle } from 'lucide-react';
+import { Users, Image as ImageIcon, BarChart2, Plus, Eye, Copy, Check, QrCode, AlertCircle, UserCheck, MessageCircle } from 'lucide-react';
 
 interface Promoter {
   id: number;
@@ -37,9 +37,20 @@ interface Content {
   created_at: string;
 }
 
+interface VisitorRecord {
+  id: number;
+  promoter_id: number;
+  wechat_id: string | null;
+  ip_address: string;
+  user_agent: string;
+  created_at: string;
+  promoter_name?: string;
+}
+
 export default function AdminPage() {
   const [promoters, setPromoters] = useState<Promoter[]>([]);
   const [contents, setContents] = useState<Content[]>([]);
+  const [visitorRecords, setVisitorRecords] = useState<VisitorRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
@@ -69,6 +80,21 @@ export default function AdminPage() {
       const statsData = await statsRes.json();
       if (statsData.data) {
         setPromoters(statsData.data);
+        
+        // 获取所有访客记录
+        const allVisitors: VisitorRecord[] = [];
+        for (const promoter of statsData.data) {
+          const visitorRes = await fetch(`/api/admin/stats?promoterId=${promoter.id}`);
+          const visitorData = await visitorRes.json();
+          if (visitorData.data?.visitorRecords) {
+            visitorData.data.visitorRecords.forEach((v: VisitorRecord) => {
+              allVisitors.push({ ...v, promoter_name: promoter.name });
+            });
+          }
+        }
+        // 按时间倒序排序
+        allVisitors.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        setVisitorRecords(allVisitors);
       }
 
       // 获取推广内容
@@ -180,6 +206,9 @@ export default function AdminPage() {
     toast.success('二维码已下载');
   };
 
+  // 筛选有微信号的访客
+  const visitorsWithWechat = visitorRecords.filter(v => v.wechat_id);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -204,8 +233,15 @@ export default function AdminPage() {
         </AlertDescription>
       </Alert>
 
-      <Tabs defaultValue="promoters" className="space-y-6">
+      <Tabs defaultValue="visitors" className="space-y-6">
         <TabsList>
+          <TabsTrigger value="visitors" className="flex items-center gap-2">
+            <UserCheck className="h-4 w-4" />
+            访客记录
+            {visitorsWithWechat.length > 0 && (
+              <Badge variant="destructive" className="ml-1">{visitorsWithWechat.length}</Badge>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="promoters" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             推广者管理
@@ -219,6 +255,101 @@ export default function AdminPage() {
             数据统计
           </TabsTrigger>
         </TabsList>
+
+        {/* 访客记录 */}
+        <TabsContent value="visitors">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MessageCircle className="h-5 w-5" />
+                访客记录
+                {visitorsWithWechat.length > 0 && (
+                  <Badge variant="destructive">有 {visitorsWithWechat.length} 人留下微信号</Badge>
+                )}
+              </CardTitle>
+              <CardDescription>所有访客的访问记录，留有微信号的可以主动联系</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {visitorRecords.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>推广者</TableHead>
+                      <TableHead>微信号</TableHead>
+                      <TableHead>IP地址</TableHead>
+                      <TableHead>访问时间</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {visitorRecords.map((record) => (
+                      <TableRow key={record.id} className={record.wechat_id ? 'bg-green-50' : ''}>
+                        <TableCell className="font-medium">{record.promoter_name}</TableCell>
+                        <TableCell>
+                          {record.wechat_id ? (
+                            <div className="flex items-center gap-2">
+                              <Badge variant="default" className="bg-green-600">{record.wechat_id}</Badge>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(record.wechat_id!);
+                                  toast.success('微信号已复制');
+                                }}
+                              >
+                                复制
+                              </Button>
+                            </div>
+                          ) : (
+                            <span className="text-gray-400">未留下</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="font-mono text-sm">{record.ip_address}</TableCell>
+                        <TableCell>{new Date(record.created_at).toLocaleString('zh-CN')}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="text-center py-8 text-gray-500">暂无访客记录</div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* 留下微信号的访客 */}
+          {visitorsWithWechat.length > 0 && (
+            <Card className="mt-6 border-2 border-green-200 bg-green-50">
+              <CardHeader>
+                <CardTitle className="text-green-800 flex items-center gap-2">
+                  <UserCheck className="h-5 w-5" />
+                  待联系访客（已留微信号）
+                </CardTitle>
+                <CardDescription className="text-green-600">以下访客已留下微信号，请尽快联系</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {visitorsWithWechat.map((record) => (
+                    <div key={record.id} className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                      <div>
+                        <div className="font-medium">微信号: <span className="text-green-600">{record.wechat_id}</span></div>
+                        <div className="text-sm text-gray-500">
+                          通过「{record.promoter_name}」推广 · {new Date(record.created_at).toLocaleString('zh-CN')}
+                        </div>
+                      </div>
+                      <Button
+                        onClick={() => {
+                          navigator.clipboard.writeText(record.wechat_id!);
+                          toast.success('微信号已复制，快去微信添加吧！');
+                        }}
+                      >
+                        复制微信号
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
 
         {/* 推广者管理 */}
         <TabsContent value="promoters">
@@ -455,7 +586,13 @@ export default function AdminPage() {
                       </TableCell>
                       <TableCell className="text-center">{promoter.stats?.uniqueVisitors || 0}</TableCell>
                       <TableCell className="text-center">{promoter.stats?.totalVisits || 0}</TableCell>
-                      <TableCell className="text-center">{promoter.stats?.wechatSubmissions || 0}</TableCell>
+                      <TableCell className="text-center">
+                        {(promoter.stats?.wechatSubmissions || 0) > 0 ? (
+                          <Badge variant="default" className="bg-green-600">{promoter.stats?.wechatSubmissions}</Badge>
+                        ) : (
+                          promoter.stats?.wechatSubmissions || 0
+                        )}
+                      </TableCell>
                       <TableCell>
                         {new Date(promoter.created_at).toLocaleDateString('zh-CN')}
                       </TableCell>
