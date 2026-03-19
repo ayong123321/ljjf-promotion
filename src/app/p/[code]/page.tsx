@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,7 +19,6 @@ export default function PromotionPage() {
     description: string | null;
     image_url: string | null;
   } | null>(null);
-  const [promoterName, setPromoterName] = useState('');
   const [visitorRecordId, setVisitorRecordId] = useState<number | null>(null);
   const [wechatId, setWechatId] = useState('');
   const [submitted, setSubmitted] = useState(false);
@@ -39,12 +38,11 @@ export default function PromotionPage() {
       
       if (data.data) {
         setVisitorRecordId(data.data.id);
-        // 获取推广内容和推广者信息
+        // 获取推广内容
         const promoterRes = await fetch(`/api/promoter/${code}`);
         const promoterData = await promoterRes.json();
         if (promoterData.data) {
           setContent(promoterData.data.content);
-          setPromoterName(promoterData.data.promoter.name);
         }
       } else {
         toast.error('页面加载失败');
@@ -97,8 +95,8 @@ export default function PromotionPage() {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
         <div className="text-center">
-          <h2 className="text-2xl font-bold mb-2">推广内容不存在</h2>
-          <p className="text-gray-600">请联系推广人员确认链接是否正确</p>
+          <h2 className="text-2xl font-bold mb-2">内容不存在</h2>
+          <p className="text-gray-600">请确认链接是否正确</p>
         </div>
       </div>
     );
@@ -120,9 +118,6 @@ export default function PromotionPage() {
           )}
           <CardHeader>
             <CardTitle className="text-2xl">{content.title}</CardTitle>
-            <CardDescription className="text-base">
-              推荐人: {promoterName}
-            </CardDescription>
           </CardHeader>
           {content.description && (
             <CardContent>
@@ -147,11 +142,6 @@ export default function PromotionPage() {
                 </>
               )}
             </CardTitle>
-            <CardDescription>
-              {submitted
-                ? '感谢您的关注，我们会尽快联系您'
-                : '留下您的微信号，我们会有专人联系您'}
-            </CardDescription>
           </CardHeader>
           <CardContent>
             {submitted ? (
@@ -184,11 +174,6 @@ export default function PromotionPage() {
             )}
           </CardContent>
         </Card>
-
-        {/* 底部提示 */}
-        <div className="text-center mt-6 text-sm text-gray-500">
-          <p>此链接由 {promoterName} 推荐分享</p>
-        </div>
       </div>
     </div>
   );
