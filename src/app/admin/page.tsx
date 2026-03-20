@@ -45,6 +45,8 @@ interface VisitorRecord {
   user_agent: string;
   created_at: string;
   promoter_name?: string;
+  wechat_status?: string;
+  deal_status?: string;
 }
 
 export default function AdminPage() {
@@ -209,6 +211,40 @@ export default function AdminPage() {
   // 筛选有微信号的访客
   const visitorsWithWechat = visitorRecords.filter(v => v.wechat_id);
 
+  // 更新访客状态
+  const updateVisitorStatus = async (recordId: number, field: 'wechatStatus' | 'dealStatus', value: string) => {
+    try {
+      const res = await fetch('/api/admin/visitor-status', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recordId,
+          wechatStatus: field === 'wechatStatus' ? value : undefined,
+          dealStatus: field === 'dealStatus' ? value : undefined,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success('状态已更新');
+        // 更新本地状态
+        setVisitorRecords(prev => prev.map(v => {
+          if (v.id === recordId) {
+            return {
+              ...v,
+              wechat_status: field === 'wechatStatus' ? value : v.wechat_status,
+              deal_status: field === 'dealStatus' ? value : v.deal_status,
+            };
+          }
+          return v;
+        }));
+      } else {
+        toast.error(data.error || '更新失败');
+      }
+    } catch (error) {
+      toast.error('更新失败');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -276,6 +312,8 @@ export default function AdminPage() {
                     <TableRow>
                       <TableHead>推广者</TableHead>
                       <TableHead>微信号</TableHead>
+                      <TableHead>微信状态</TableHead>
+                      <TableHead>成交状态</TableHead>
                       <TableHead>IP地址</TableHead>
                       <TableHead>访问时间</TableHead>
                     </TableRow>
@@ -303,6 +341,52 @@ export default function AdminPage() {
                             <span className="text-gray-400">未留下</span>
                           )}
                         </TableCell>
+                        <TableCell>
+                          {record.wechat_id ? (
+                            <div className="flex gap-1">
+                              <Button
+                                size="sm"
+                                variant={record.wechat_status === '已添加' ? 'default' : 'outline'}
+                                className={record.wechat_status === '已添加' ? 'bg-green-600 hover:bg-green-700' : ''}
+                                onClick={() => updateVisitorStatus(record.id, 'wechatStatus', '已添加')}
+                              >
+                                已添加
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant={record.wechat_status === '未添加' ? 'secondary' : 'outline'}
+                                onClick={() => updateVisitorStatus(record.id, 'wechatStatus', '未添加')}
+                              >
+                                未添加
+                              </Button>
+                            </div>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {record.wechat_id ? (
+                            <div className="flex gap-1">
+                              <Button
+                                size="sm"
+                                variant={record.deal_status === '已成交' ? 'default' : 'outline'}
+                                className={record.deal_status === '已成交' ? 'bg-blue-600 hover:bg-blue-700' : ''}
+                                onClick={() => updateVisitorStatus(record.id, 'dealStatus', '已成交')}
+                              >
+                                已成交
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant={record.deal_status === '未成交' ? 'secondary' : 'outline'}
+                                onClick={() => updateVisitorStatus(record.id, 'dealStatus', '未成交')}
+                              >
+                                未成交
+                              </Button>
+                            </div>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </TableCell>
                         <TableCell className="font-mono text-sm">{record.ip_address}</TableCell>
                         <TableCell>{new Date(record.created_at).toLocaleString('zh-CN')}</TableCell>
                       </TableRow>
@@ -323,26 +407,70 @@ export default function AdminPage() {
                   <UserCheck className="h-5 w-5" />
                   待联系访客（已留微信号）
                 </CardTitle>
-                <CardDescription className="text-green-600">以下访客已留下微信号，请尽快联系</CardDescription>
+                <CardDescription className="text-green-600">以下访客已留下微信号，请尽快联系并标记状态</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   {visitorsWithWechat.map((record) => (
-                    <div key={record.id} className="flex items-center justify-between p-3 bg-white rounded-lg border">
-                      <div>
-                        <div className="font-medium">微信号: <span className="text-green-600">{record.wechat_id}</span></div>
-                        <div className="text-sm text-gray-500">
-                          通过「{record.promoter_name}」推广 · {new Date(record.created_at).toLocaleString('zh-CN')}
+                    <div key={record.id} className="p-4 bg-white rounded-lg border">
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <div className="font-medium">微信号: <span className="text-green-600">{record.wechat_id}</span></div>
+                          <div className="text-sm text-gray-500">
+                            通过「{record.promoter_name}」推广 · {new Date(record.created_at).toLocaleString('zh-CN')}
+                          </div>
+                        </div>
+                        <Button
+                          onClick={() => {
+                            navigator.clipboard.writeText(record.wechat_id!);
+                            toast.success('微信号已复制，快去微信添加吧！');
+                          }}
+                        >
+                          复制微信号
+                        </Button>
+                      </div>
+                      <div className="flex items-center gap-4 pt-2 border-t">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-gray-600">微信状态:</span>
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant={record.wechat_status === '已添加' ? 'default' : 'outline'}
+                              className={record.wechat_status === '已添加' ? 'bg-green-600 hover:bg-green-700' : ''}
+                              onClick={() => updateVisitorStatus(record.id, 'wechatStatus', '已添加')}
+                            >
+                              已添加
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant={record.wechat_status === '未添加' ? 'secondary' : 'outline'}
+                              onClick={() => updateVisitorStatus(record.id, 'wechatStatus', '未添加')}
+                            >
+                              未添加
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-gray-600">成交状态:</span>
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant={record.deal_status === '已成交' ? 'default' : 'outline'}
+                              className={record.deal_status === '已成交' ? 'bg-blue-600 hover:bg-blue-700' : ''}
+                              onClick={() => updateVisitorStatus(record.id, 'dealStatus', '已成交')}
+                            >
+                              已成交
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant={record.deal_status === '未成交' ? 'secondary' : 'outline'}
+                              onClick={() => updateVisitorStatus(record.id, 'dealStatus', '未成交')}
+                            >
+                              未成交
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                      <Button
-                        onClick={() => {
-                          navigator.clipboard.writeText(record.wechat_id!);
-                          toast.success('微信号已复制，快去微信添加吧！');
-                        }}
-                      >
-                        复制微信号
-                      </Button>
                     </div>
                   ))}
                 </div>

@@ -31,6 +31,8 @@ interface PromoterData {
     ip_address: string;
     user_agent: string;
     created_at: string;
+    wechat_status?: string;
+    deal_status?: string;
   }>;
   content: {
     id: number;
@@ -148,25 +150,43 @@ export default function PromoterPage() {
           <CardContent>
             <div className="space-y-3">
               {visitorsWithWechat.map((record) => (
-                <div key={record.id} className="flex items-center justify-between p-4 bg-white rounded-lg border border-green-200">
-                  <div>
-                    <div className="text-lg font-medium">
-                      微信号: <span className="text-green-600 font-bold">{record.wechat_id}</span>
+                <div key={record.id} className="p-4 bg-white rounded-lg border border-green-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <div className="text-lg font-medium">
+                        微信号: <span className="text-green-600 font-bold">{record.wechat_id}</span>
+                      </div>
+                      <div className="text-sm text-gray-500 mt-1">
+                        访问时间: {new Date(record.created_at).toLocaleString('zh-CN')}
+                      </div>
                     </div>
-                    <div className="text-sm text-gray-500 mt-1">
-                      访问时间: {new Date(record.created_at).toLocaleString('zh-CN')}
+                    <Button
+                      onClick={() => {
+                        navigator.clipboard.writeText(record.wechat_id!);
+                        toast.success('微信号已复制，快去微信添加吧！');
+                      }}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      <Copy className="h-4 w-4 mr-2" />
+                      复制微信号
+                    </Button>
+                  </div>
+                  <div className="flex items-center gap-4 pt-2 border-t">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600">微信状态:</span>
+                      <Badge variant={record.wechat_status === '已添加' ? 'default' : 'secondary'}
+                             className={record.wechat_status === '已添加' ? 'bg-green-600' : ''}>
+                        {record.wechat_status || '未添加'}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600">成交状态:</span>
+                      <Badge variant={record.deal_status === '已成交' ? 'default' : 'secondary'}
+                             className={record.deal_status === '已成交' ? 'bg-blue-600' : ''}>
+                        {record.deal_status || '未成交'}
+                      </Badge>
                     </div>
                   </div>
-                  <Button
-                    onClick={() => {
-                      navigator.clipboard.writeText(record.wechat_id!);
-                      toast.success('微信号已复制，快去微信添加吧！');
-                    }}
-                    className="bg-green-600 hover:bg-green-700"
-                  >
-                    <Copy className="h-4 w-4 mr-2" />
-                    复制微信号
-                  </Button>
                 </div>
               ))}
             </div>
@@ -327,6 +347,8 @@ export default function PromoterPage() {
                 <TableRow>
                   <TableHead>访客IP</TableHead>
                   <TableHead>微信号</TableHead>
+                  <TableHead>微信状态</TableHead>
+                  <TableHead>成交状态</TableHead>
                   <TableHead>访问时间</TableHead>
                 </TableRow>
               </TableHeader>
@@ -353,6 +375,26 @@ export default function PromoterPage() {
                         </div>
                       ) : (
                         <span className="text-gray-400">未留下</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {record.wechat_id ? (
+                        <Badge variant={record.wechat_status === '已添加' ? 'default' : 'secondary'} 
+                               className={record.wechat_status === '已添加' ? 'bg-green-600' : ''}>
+                          {record.wechat_status || '未添加'}
+                        </Badge>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {record.wechat_id ? (
+                        <Badge variant={record.deal_status === '已成交' ? 'default' : 'secondary'}
+                               className={record.deal_status === '已成交' ? 'bg-blue-600' : ''}>
+                          {record.deal_status || '未成交'}
+                        </Badge>
+                      ) : (
+                        <span className="text-gray-400">-</span>
                       )}
                     </TableCell>
                     <TableCell>

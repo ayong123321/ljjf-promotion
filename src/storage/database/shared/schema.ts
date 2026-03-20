@@ -51,6 +51,8 @@ export const visitorRecords = pgTable(
     ipAddress: varchar("ip_address", { length: 50 }),
     userAgent: text("user_agent"),
     referrer: text("referrer"),
+    wechatStatus: varchar("wechat_status", { length: 20 }).default("未添加").notNull(),
+    dealStatus: varchar("deal_status", { length: 20 }).default("未成交").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
   },
   (table) => [
