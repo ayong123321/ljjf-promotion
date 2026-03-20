@@ -200,7 +200,7 @@ export default function PromotionPage() {
               ) : (
                 <>
                   <Send className="h-5 w-5" />
-                  留下联系方式
+                  留下联系方式（到店可领取礼品一份）
                 </>
               )}
             </CardTitle>
@@ -210,16 +210,16 @@ export default function PromotionPage() {
               <div className="text-center py-8">
                 <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
                 <p className="text-lg font-medium text-green-600">提交成功！</p>
-                <p className="text-gray-600 mt-2">我们会尽快通过微信联系您</p>
+                <p className="text-gray-600 mt-2">我们会尽快联系您，到店记得领取礼品哦～</p>
               </div>
             ) : (
               <form onSubmit={handleSubmitWechat} className="space-y-4">
                 <div>
-                  <Label htmlFor="wechat">微信号</Label>
+                  <Label htmlFor="wechat">微信号或手机号</Label>
                   <Input
                     id="wechat"
                     type="text"
-                    placeholder="请输入您的微信号"
+                    placeholder="请输入您的微信号或手机号"
                     value={wechatId}
                     onChange={(e) => setWechatId(e.target.value)}
                     className="mt-1"
