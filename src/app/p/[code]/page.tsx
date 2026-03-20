@@ -113,11 +113,11 @@ export default function PromotionPage() {
         {/* 推广内容卡片 */}
         <Card className="mb-6 overflow-hidden shadow-lg">
           {content.image_url && (
-            <div className="w-full aspect-video relative">
+            <div className="w-full flex justify-center bg-gray-100 p-2">
               <img
                 src={content.image_url}
                 alt={content.title}
-                className="w-full h-full object-cover"
+                className="max-w-full max-h-[60vh] object-contain"
               />
             </div>
           )}
