@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Send, CheckCircle, MapPin, MessageCircle, Copy } from 'lucide-react';
+import { Send, CheckCircle, MapPin, Phone, Copy } from 'lucide-react';
 
 export default function PromotionPage() {
   const params = useParams();
@@ -83,9 +83,9 @@ export default function PromotionPage() {
     }
   };
 
-  const copyWechat = (wechat: string) => {
-    navigator.clipboard.writeText(wechat);
-    toast.success('微信号已复制');
+  const copyPhone = (phone: string) => {
+    navigator.clipboard.writeText(phone);
+    toast.success('电话号码已复制');
   };
 
   if (loading) {
@@ -150,23 +150,33 @@ export default function PromotionPage() {
                 </div>
               </div>
               
-              {/* 微信号 */}
+              {/* 热线电话 */}
               <div className="flex items-center justify-between p-3 bg-white rounded-lg">
                 <div className="flex items-center gap-3">
-                  <MessageCircle className="h-5 w-5 text-green-500" />
+                  <Phone className="h-5 w-5 text-orange-500" />
                   <div>
-                    <p className="font-medium text-gray-800">微信咨询</p>
-                    <p className="text-green-600 font-medium">ljjf2025</p>
+                    <p className="font-medium text-gray-800">热线咨询</p>
+                    <p className="text-orange-600 font-medium text-lg">13573755584</p>
                   </div>
                 </div>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => copyWechat('ljjf2025')}
-                >
-                  <Copy className="h-4 w-4 mr-1" />
-                  复制
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => copyPhone('13573755584')}
+                  >
+                    <Copy className="h-4 w-4 mr-1" />
+                    复制
+                  </Button>
+                  <a href="tel:13573755584">
+                    <Button 
+                      size="sm"
+                      className="bg-orange-500 hover:bg-orange-600"
+                    >
+                      拨打
+                    </Button>
+                  </a>
+                </div>
               </div>
             </div>
           </CardContent>
