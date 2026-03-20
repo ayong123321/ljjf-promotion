@@ -10,8 +10,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Users, Image as ImageIcon, BarChart2, Plus, Eye, Copy, Check, QrCode, AlertCircle, UserCheck, MessageCircle } from 'lucide-react';
+import { Users, Image as ImageIcon, BarChart2, Plus, Eye, Copy, Check, QrCode, AlertCircle, UserCheck, MessageCircle, Link as LinkIcon, X } from 'lucide-react';
 
 interface Promoter {
   id: number;
@@ -62,6 +63,14 @@ export default function AdminPage() {
     phone: '',
     wechat: '',
   });
+
+  // 新创建的推广者信息（用于弹窗展示）
+  const [newPromoter, setNewPromoter] = useState<{
+    name: string;
+    uniqueCode: string;
+    promoterLink: string;
+    promotionLink: string;
+  } | null>(null);
 
   // 创建内容表单
   const [contentForm, setContentForm] = useState({
@@ -122,7 +131,15 @@ export default function AdminPage() {
       });
       const data = await res.json();
       if (data.data) {
-        toast.success('推广者创建成功');
+        // 显示新推广者信息弹窗
+        const uniqueCode = data.data.unique_code;
+        const baseUrl = window.location.origin;
+        setNewPromoter({
+          name: data.data.name,
+          uniqueCode: uniqueCode,
+          promoterLink: `${baseUrl}/promoter/${uniqueCode}`,
+          promotionLink: `${baseUrl}/p/${uniqueCode}`,
+        });
         setPromoterForm({ name: '', phone: '', wechat: '' });
         fetchData();
       } else {
@@ -255,6 +272,78 @@ export default function AdminPage() {
 
   return (
     <div className="container mx-auto p-6">
+      {/* 新推广者创建成功弹窗 */}
+      <Dialog open={!!newPromoter} onOpenChange={() => setNewPromoter(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-green-600">推广者创建成功！</DialogTitle>
+            <DialogDescription>
+              请将以下信息发送给推广者 <strong>{newPromoter?.name}</strong>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* 推广者后台链接 */}
+            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="flex items-center gap-2 mb-2">
+                <Eye className="h-4 w-4 text-blue-600" />
+                <span className="font-medium text-blue-800">推广者后台（重要）</span>
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  value={newPromoter?.promoterLink || ''}
+                  readOnly
+                  className="flex-1 bg-white"
+                />
+                <Button
+                  onClick={() => {
+                    navigator.clipboard.writeText(newPromoter?.promoterLink || '');
+                    toast.success('后台链接已复制');
+                  }}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+              <p className="text-xs text-blue-600 mt-2">推广者通过此链接查看自己的推广数据和访客信息</p>
+            </div>
+
+            {/* 推广链接 */}
+            <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+              <div className="flex items-center gap-2 mb-2">
+                <LinkIcon className="h-4 w-4 text-green-600" />
+                <span className="font-medium text-green-800">推广链接</span>
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  value={newPromoter?.promotionLink || ''}
+                  readOnly
+                  className="flex-1 bg-white"
+                />
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    navigator.clipboard.writeText(newPromoter?.promotionLink || '');
+                    toast.success('推广链接已复制');
+                  }}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+              <p className="text-xs text-green-600 mt-2">此链接用于推广，访客点击后会被记录</p>
+            </div>
+
+            {/* 提示 */}
+            <div className="p-3 bg-orange-50 rounded-lg border border-orange-200">
+              <p className="text-sm text-orange-700">
+                <strong>提示：</strong>微信中直接发链接可能被拦截，建议下载二维码图片发给推广者
+              </p>
+            </div>
+          </div>
+          <Button className="w-full" onClick={() => setNewPromoter(null)}>
+            关闭
+          </Button>
+        </DialogContent>
+      </Dialog>
+
       <div className="mb-8">
         <h1 className="text-3xl font-bold">假发店推广管理系统</h1>
         <p className="text-gray-600 mt-2">管理推广者、推广内容和查看统计数据</p>
@@ -530,42 +619,54 @@ export default function AdminPage() {
               <CardContent>
                 <div className="space-y-3">
                   {promoters.map((promoter) => (
-                    <div key={promoter.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div>
-                        <div className="font-medium">{promoter.name}</div>
-                        <div className="text-sm text-gray-500">
-                          推广码: {promoter.unique_code}
+                    <div key={promoter.id} className="p-4 border rounded-lg">
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <div className="font-medium text-lg">{promoter.name}</div>
+                          <div className="text-sm text-gray-500">
+                            推广码: <Badge variant="outline">{promoter.unique_code}</Badge>
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex gap-2">
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => downloadQRCode(promoter.unique_code)}
-                          title="下载二维码"
                         >
-                          <QrCode className="h-4 w-4" />
+                          <QrCode className="h-4 w-4 mr-1" />
+                          二维码
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => copyToClipboard(promoter.unique_code)}
-                          title="复制推广链接"
-                        >
-                          {copiedCode === promoter.unique_code ? (
-                            <Check className="h-4 w-4" />
-                          ) : (
-                            <Copy className="h-4 w-4" />
-                          )}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => copyPromoterLink(promoter.unique_code)}
-                          title="推广者后台链接"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
+                      </div>
+                      <div className="grid gap-2 text-sm">
+                        <div className="flex items-center gap-2 p-2 bg-blue-50 rounded">
+                          <Eye className="h-4 w-4 text-blue-600" />
+                          <span className="text-gray-600">后台:</span>
+                          <code className="flex-1 text-blue-600 text-xs">{typeof window !== 'undefined' ? `${window.location.origin}/promoter/${promoter.unique_code}` : ''}</code>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 px-2"
+                            onClick={() => copyPromoterLink(promoter.unique_code)}
+                          >
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                        </div>
+                        <div className="flex items-center gap-2 p-2 bg-green-50 rounded">
+                          <LinkIcon className="h-4 w-4 text-green-600" />
+                          <span className="text-gray-600">推广:</span>
+                          <code className="flex-1 text-green-600 text-xs">{typeof window !== 'undefined' ? `${window.location.origin}/p/${promoter.unique_code}` : ''}</code>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 px-2"
+                            onClick={() => copyToClipboard(promoter.unique_code)}
+                          >
+                            {copiedCode === promoter.unique_code ? (
+                              <Check className="h-3 w-3 text-green-600" />
+                            ) : (
+                              <Copy className="h-3 w-3" />
+                            )}
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   ))}
