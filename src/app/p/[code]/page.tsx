@@ -200,7 +200,7 @@ export default function PromotionPage() {
               ) : (
                 <>
                   <Send className="h-5 w-5" />
-                  留下联系方式（到店可领取礼品一份）
+                  留下联系方式<span className="text-red-500">（到店可领取礼品一份）</span>
                 </>
               )}
             </CardTitle>
