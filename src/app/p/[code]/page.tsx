@@ -142,13 +142,19 @@ export default function PromotionPage() {
             
             <div className="space-y-4">
               {/* 门店地址 */}
-              <div className="flex items-start gap-3 p-3 bg-white rounded-lg">
-                <MapPin className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
-                <div>
+              <a 
+                href="https://uri.amap.com/search?keyword=永安玲姐假发" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 p-3 bg-white rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+              >
+                <MapPin className="h-5 w-5 text-red-500 flex-shrink-0" />
+                <div className="flex-1">
                   <p className="font-medium text-gray-800">门店地址</p>
-                  <p className="text-gray-600">长清区永安小区12号楼对面（永安玲姐假发）</p>
+                  <p className="text-blue-600 underline">永安玲姐假发</p>
                 </div>
-              </div>
+                <span className="text-xs text-gray-400">点击导航</span>
+              </a>
               
               {/* 热线电话 */}
               <div className="flex items-center justify-between p-3 bg-white rounded-lg">
