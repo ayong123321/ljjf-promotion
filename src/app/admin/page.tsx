@@ -81,6 +81,7 @@ export default function AdminPage() {
     videoUrl: '',
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -165,6 +166,9 @@ export default function AdminPage() {
       if (imageFile) {
         formData.append('image', imageFile);
       }
+      if (videoFile) {
+        formData.append('video', videoFile);
+      }
 
       const res = await fetch('/api/admin/content', {
         method: 'POST',
@@ -175,6 +179,7 @@ export default function AdminPage() {
         toast.success('推广内容保存成功');
         setContentForm({ id: '', title: '', description: '', videoUrl: '' });
         setImageFile(null);
+        setVideoFile(null);
         fetchData();
       } else {
         toast.error(data.error || '保存失败');
@@ -716,18 +721,47 @@ export default function AdminPage() {
                       onChange={(e) => setImageFile(e.target.files?.[0] || null)}
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="videoUrl">导航视频链接（可选）</Label>
-                    <Input
-                      id="videoUrl"
-                      type="url"
-                      placeholder="输入视频链接，如抖音、快手等分享链接"
-                      value={contentForm.videoUrl}
-                      onChange={(e) => setContentForm({ ...contentForm, videoUrl: e.target.value })}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      支持抖音、快手、微信视频号等平台的视频链接，不填则不显示
-                    </p>
+                  <div className="border-t pt-4 mt-4">
+                    <Label className="text-base font-semibold">导航视频（可选）</Label>
+                    <p className="text-xs text-gray-500 mb-3">上传视频文件或粘贴视频链接，二选一即可</p>
+                    
+                    <div className="space-y-3">
+                      <div>
+                        <Label htmlFor="video" className="text-sm">上传视频文件</Label>
+                        <Input
+                          id="video"
+                          type="file"
+                          accept="video/*"
+                          onChange={(e) => {
+                            setVideoFile(e.target.files?.[0] || null);
+                            if (e.target.files?.[0]) {
+                              setContentForm({ ...contentForm, videoUrl: '' });
+                            }
+                          }}
+                        />
+                        {videoFile && (
+                          <p className="text-xs text-green-600 mt-1">已选择: {videoFile.name}</p>
+                        )}
+                      </div>
+                      
+                      <div className="text-center text-gray-400 text-sm">或者</div>
+                      
+                      <div>
+                        <Label htmlFor="videoUrl" className="text-sm">粘贴视频链接</Label>
+                        <Input
+                          id="videoUrl"
+                          type="text"
+                          placeholder="粘贴抖音、快手等分享链接"
+                          value={contentForm.videoUrl}
+                          onChange={(e) => {
+                            setContentForm({ ...contentForm, videoUrl: e.target.value });
+                            if (e.target.value) {
+                              setVideoFile(null);
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
                   </div>
                   <div className="flex gap-2">
                     <Button type="submit" className="flex-1">

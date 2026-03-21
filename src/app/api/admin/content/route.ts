@@ -36,8 +36,9 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const title = formData.get('title') as string;
     const description = formData.get('description') as string;
-    const videoUrl = formData.get('videoUrl') as string | null;
+    const videoUrlInput = formData.get('videoUrl') as string | null;
     const imageFile = formData.get('image') as File | null;
+    const videoFile = formData.get('video') as File | null;
     const id = formData.get('id') as string | null;
 
     if (!title) {
@@ -45,6 +46,7 @@ export async function POST(request: NextRequest) {
     }
 
     let imageUrl: string | null = null;
+    let videoUrl: string | null = null;
 
     // 如果有上传图片,先上传到对象存储
     if (imageFile && imageFile.size > 0) {
@@ -63,6 +65,26 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // 如果有上传视频,上传到对象存储
+    if (videoFile && videoFile.size > 0) {
+      const buffer = Buffer.from(await videoFile.arrayBuffer());
+      const fileName = `videos/${Date.now()}_${videoFile.name}`;
+      
+      const videoKey = await storage.uploadFile({
+        fileContent: buffer,
+        fileName: fileName,
+        contentType: videoFile.type || 'video/mp4',
+      });
+
+      videoUrl = await storage.generatePresignedUrl({
+        key: videoKey,
+        expireTime: 31536000, // 1年有效期
+      });
+    } else if (videoUrlInput && videoUrlInput.trim()) {
+      // 如果没有上传视频但有链接，使用链接
+      videoUrl = videoUrlInput.trim();
+    }
+
     const client = getSupabaseClient();
 
     if (id) {
@@ -70,7 +92,7 @@ export async function POST(request: NextRequest) {
       const updateData: Record<string, any> = {
         title,
         description: description || null,
-        video_url: videoUrl || null,
+        video_url: videoUrl,
         updated_at: new Date().toISOString(),
       };
       
@@ -98,7 +120,7 @@ export async function POST(request: NextRequest) {
           title,
           description: description || null,
           image_url: imageUrl,
-          video_url: videoUrl || null,
+          video_url: videoUrl,
         })
         .select()
         .single();
