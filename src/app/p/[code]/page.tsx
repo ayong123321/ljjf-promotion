@@ -199,48 +199,33 @@ export default function PromotionPage() {
           <Card className="mb-6 overflow-hidden shadow-lg border-2 border-green-200">
             <CardContent className="p-0">
               {/* 动态标题 */}
-              <div className="relative bg-gradient-to-r from-green-500 to-emerald-500 py-3 px-4">
+              <div className="relative bg-gradient-to-r from-green-500 to-emerald-500 py-4 px-4 overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-400 animate-pulse opacity-50"></div>
-                <h3 className="relative text-white text-xl font-bold text-center flex items-center justify-center gap-2">
-                  <span className="inline-block animate-bounce">🎬</span>
-                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-yellow-200">
-                    导航视频
+                <div className="absolute inset-0 overflow-hidden">
+                  <div className="absolute -left-4 top-0 h-full w-8 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-[shimmer_2s_infinite] transform -skew-x-12"></div>
+                </div>
+                <h3 className="relative text-white text-2xl font-bold text-center flex items-center justify-center gap-3">
+                  <span className="inline-block animate-bounce text-3xl">🎬</span>
+                  <span className="relative">
+                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-white via-yellow-200 to-white animate-[text-shine_3s_ease-in-out_infinite] bg-[length:200%_100%]">
+                      导航视频
+                    </span>
+                    <span className="absolute -bottom-1 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-yellow-300 to-transparent animate-pulse"></span>
                   </span>
-                  <span className="inline-block animate-bounce" style={{ animationDelay: '0.1s' }}>🎬</span>
+                  <span className="inline-block animate-bounce text-3xl" style={{ animationDelay: '0.15s' }}>🎬</span>
                 </h3>
               </div>
               {/* 视频区域 */}
               <div className="p-4 bg-gradient-to-b from-green-50 to-white">
-                {content.video_url.includes('.mp4') || content.video_url.includes('.webm') || content.video_url.includes('.mov') ? (
-                  <video 
-                    src={content.video_url} 
-                    controls 
-                    className="w-full rounded-lg shadow-md"
-                    poster={content.image_url || undefined}
-                  >
-                    您的浏览器不支持视频播放
-                  </video>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="aspect-video bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center">
-                      <div className="text-center">
-                        <div className="text-6xl mb-4">🎥</div>
-                        <p className="text-gray-600 mb-2">点击下方按钮观看导航视频</p>
-                      </div>
-                    </div>
-                    <a 
-                      href={content.video_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="block"
-                    >
-                      <Button className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-lg py-6">
-                        <span className="mr-2">▶️</span>
-                        点击观看视频
-                      </Button>
-                    </a>
-                  </div>
-                )}
+                <video 
+                  src={content.video_url} 
+                  controls 
+                  className="w-full rounded-lg shadow-md"
+                  poster={content.image_url || undefined}
+                  playsInline
+                >
+                  您的浏览器不支持视频播放
+                </video>
               </div>
             </CardContent>
           </Card>
