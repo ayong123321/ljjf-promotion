@@ -41,15 +41,19 @@ export async function POST(request: NextRequest) {
     const videoFile = formData.get('video') as File | null;
     const id = formData.get('id') as string | null;
 
+    console.log('收到请求:', { title, id, hasImage: !!imageFile, hasVideo: !!videoFile, videoUrlInput });
+
     if (!title) {
       return NextResponse.json({ error: '标题不能为空' }, { status: 400 });
     }
 
     let imageUrl: string | null = null;
     let videoUrl: string | null = null;
+    let hasNewVideo = false;
 
     // 如果有上传图片,先上传到对象存储
     if (imageFile && imageFile.size > 0) {
+      console.log('上传图片:', imageFile.name, imageFile.size);
       const buffer = Buffer.from(await imageFile.arrayBuffer());
       const fileName = `promotions/${Date.now()}_${imageFile.name}`;
       
@@ -63,10 +67,12 @@ export async function POST(request: NextRequest) {
         key: imageKey,
         expireTime: 31536000, // 1年有效期
       });
+      console.log('图片上传成功:', imageUrl?.substring(0, 50));
     }
 
     // 如果有上传视频,上传到对象存储
     if (videoFile && videoFile.size > 0) {
+      console.log('上传视频:', videoFile.name, videoFile.size);
       const buffer = Buffer.from(await videoFile.arrayBuffer());
       const fileName = `videos/${Date.now()}_${videoFile.name}`;
       
@@ -80,9 +86,12 @@ export async function POST(request: NextRequest) {
         key: videoKey,
         expireTime: 31536000, // 1年有效期
       });
+      hasNewVideo = true;
+      console.log('视频上传成功:', videoUrl?.substring(0, 50));
     } else if (videoUrlInput && videoUrlInput.trim()) {
       // 如果没有上传视频但有链接，使用链接
       videoUrl = videoUrlInput.trim();
+      hasNewVideo = true;
     }
 
     const client = getSupabaseClient();
@@ -92,13 +101,19 @@ export async function POST(request: NextRequest) {
       const updateData: Record<string, any> = {
         title,
         description: description || null,
-        video_url: videoUrl,
         updated_at: new Date().toISOString(),
       };
       
       if (imageUrl) {
         updateData.image_url = imageUrl;
       }
+      
+      // 只有在有新视频时才更新video_url
+      if (hasNewVideo) {
+        updateData.video_url = videoUrl;
+      }
+
+      console.log('更新数据:', { id, updateData });
 
       const { data, error } = await client
         .from('promotion_contents')
@@ -108,10 +123,12 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (error) {
+        console.error('更新失败:', error);
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
-      return NextResponse.json({ data });
+      console.log('更新成功:', data);
+      return NextResponse.json({ data, videoUploaded: hasNewVideo });
     } else {
       // 创建新内容
       const { data, error } = await client
@@ -126,10 +143,12 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (error) {
+        console.error('创建失败:', error);
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
-      return NextResponse.json({ data });
+      console.log('创建成功:', data);
+      return NextResponse.json({ data, videoUploaded: hasNewVideo });
     }
   } catch (error) {
     console.error('保存推广内容失败:', error);

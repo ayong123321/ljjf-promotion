@@ -132,6 +132,43 @@ export default function PromotionPage() {
           )}
         </Card>
 
+        {/* 导航视频 - 放在推广内容和门店信息之间 */}
+        {content.video_url && (
+          <Card className="mb-6 overflow-hidden shadow-lg border-2 border-green-400">
+            <CardContent className="p-0">
+              {/* 视频区域 */}
+              <div className="p-4 bg-gradient-to-b from-green-50 to-white">
+                <video 
+                  src={content.video_url} 
+                  controls 
+                  className="w-full rounded-lg shadow-md"
+                  poster={content.image_url || undefined}
+                  playsInline
+                >
+                  您的浏览器不支持视频播放
+                </video>
+              </div>
+              {/* 动态标题 - 在视频下方 */}
+              <div className="relative bg-gradient-to-r from-green-500 to-emerald-500 py-4 px-4 overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-400 animate-pulse opacity-50"></div>
+                <div className="absolute inset-0 overflow-hidden">
+                  <div className="absolute -left-4 top-0 h-full w-8 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-[shimmer_2s_infinite] transform -skew-x-12"></div>
+                </div>
+                <h3 className="relative text-white text-2xl font-bold text-center flex items-center justify-center gap-3">
+                  <span className="inline-block animate-bounce text-3xl">🎬</span>
+                  <span className="relative">
+                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-white via-yellow-200 to-white animate-[text-shine_3s_ease-in-out_infinite] bg-[length:200%_100%]">
+                      导航视频
+                    </span>
+                    <span className="absolute -bottom-1 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-yellow-300 to-transparent animate-pulse"></span>
+                  </span>
+                  <span className="inline-block animate-bounce text-3xl" style={{ animationDelay: '0.15s' }}>🎬</span>
+                </h3>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* 门店信息 */}
         <Card className="mb-6 shadow-lg bg-gradient-to-r from-orange-50 to-pink-50 border-orange-200">
           <CardContent className="pt-6">
@@ -193,43 +230,6 @@ export default function PromotionPage() {
             </div>
           </CardContent>
         </Card>
-
-        {/* 导航视频 */}
-        {content.video_url && (
-          <Card className="mb-6 overflow-hidden shadow-lg border-2 border-green-200">
-            <CardContent className="p-0">
-              {/* 动态标题 */}
-              <div className="relative bg-gradient-to-r from-green-500 to-emerald-500 py-4 px-4 overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-400 animate-pulse opacity-50"></div>
-                <div className="absolute inset-0 overflow-hidden">
-                  <div className="absolute -left-4 top-0 h-full w-8 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-[shimmer_2s_infinite] transform -skew-x-12"></div>
-                </div>
-                <h3 className="relative text-white text-2xl font-bold text-center flex items-center justify-center gap-3">
-                  <span className="inline-block animate-bounce text-3xl">🎬</span>
-                  <span className="relative">
-                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-white via-yellow-200 to-white animate-[text-shine_3s_ease-in-out_infinite] bg-[length:200%_100%]">
-                      导航视频
-                    </span>
-                    <span className="absolute -bottom-1 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-yellow-300 to-transparent animate-pulse"></span>
-                  </span>
-                  <span className="inline-block animate-bounce text-3xl" style={{ animationDelay: '0.15s' }}>🎬</span>
-                </h3>
-              </div>
-              {/* 视频区域 */}
-              <div className="p-4 bg-gradient-to-b from-green-50 to-white">
-                <video 
-                  src={content.video_url} 
-                  controls 
-                  className="w-full rounded-lg shadow-md"
-                  poster={content.image_url || undefined}
-                  playsInline
-                >
-                  您的浏览器不支持视频播放
-                </video>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* 联系表单 */}
         <Card className="shadow-lg">

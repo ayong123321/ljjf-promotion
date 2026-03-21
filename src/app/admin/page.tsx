@@ -176,7 +176,12 @@ export default function AdminPage() {
       });
       const data = await res.json();
       if (data.data) {
-        toast.success('推广内容保存成功');
+        // 显示上传成功信息
+        let successMsg = '推广内容保存成功';
+        if (videoFile) {
+          successMsg += '（视频已上传）';
+        }
+        toast.success(successMsg, { duration: 3000 });
         setContentForm({ id: '', title: '', description: '', videoUrl: '' });
         setImageFile(null);
         setVideoFile(null);
