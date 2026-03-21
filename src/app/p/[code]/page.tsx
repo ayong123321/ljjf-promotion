@@ -7,7 +7,37 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Send, CheckCircle, MapPin, Phone, Copy } from 'lucide-react';
+import { Send, CheckCircle, MapPin, Phone, Copy, Play, ExternalLink } from 'lucide-react';
+
+// 判断是否是可播放的视频URL
+const isPlayableVideoUrl = (url: string): boolean => {
+  if (!url) return false;
+  const lowerUrl = url.toLowerCase();
+  // 可播放的视频格式
+  const playableExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.m4v'];
+  const isPlayable = playableExtensions.some(ext => lowerUrl.includes(ext));
+  // 排除抖音、快手等短链接
+  const isShortLink = lowerUrl.includes('douyin.com') || 
+                      lowerUrl.includes('v.douyin.com') ||
+                      lowerUrl.includes('kuaishou.com') ||
+                      lowerUrl.includes('tiktok.com');
+  return isPlayable && !isShortLink;
+};
+
+// 判断是否是抖音链接
+const isDouyinUrl = (url: string): boolean => {
+  if (!url) return false;
+  const lowerUrl = url.toLowerCase();
+  return lowerUrl.includes('douyin.com') || lowerUrl.includes('v.douyin.com');
+};
+
+// 从文本中提取URL
+const extractUrl = (text: string): string | null => {
+  if (!text) return null;
+  // 匹配 http:// 或 https:// 开头的URL
+  const urlMatch = text.match(/https?:\/\/[^\s<>"{}|\\^`\[\]]+/);
+  return urlMatch ? urlMatch[0] : null;
+};
 
 export default function PromotionPage() {
   const params = useParams();
@@ -132,42 +162,86 @@ export default function PromotionPage() {
           )}
         </Card>
 
-        {/* 导航视频 - 放在推广内容和门店信息之间 */}
-        {content.video_url && (
-          <Card className="mb-6 overflow-hidden shadow-lg border-2 border-green-400">
-            <CardContent className="p-0">
-              {/* 视频区域 */}
-              <div className="p-4 bg-gradient-to-b from-green-50 to-white">
-                <video 
-                  src={content.video_url} 
-                  controls 
-                  className="w-full rounded-lg shadow-md"
-                  poster={content.image_url || undefined}
-                  playsInline
-                >
-                  您的浏览器不支持视频播放
-                </video>
-              </div>
-              {/* 动态标题 - 在视频下方 */}
-              <div className="relative bg-gradient-to-r from-green-500 to-emerald-500 py-4 px-4 overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-400 animate-pulse opacity-50"></div>
-                <div className="absolute inset-0 overflow-hidden">
-                  <div className="absolute -left-4 top-0 h-full w-8 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-[shimmer_2s_infinite] transform -skew-x-12"></div>
+        {/* 导航视频 - 支持抖音链接和普通视频 */}
+        {content.video_url && (() => {
+          // 从文本中提取URL
+          const videoUrl = extractUrl(content.video_url) || content.video_url;
+          const isDouyin = isDouyinUrl(videoUrl);
+          const isPlayable = isPlayableVideoUrl(videoUrl);
+          
+          return (
+            <Card className="mb-6 overflow-hidden shadow-lg border-2 border-green-400">
+              <CardContent className="p-0">
+                {/* 视频区域 */}
+                <div className="p-4 bg-gradient-to-b from-green-50 to-white">
+                  {isPlayable ? (
+                    // 普通视频 - 直接播放
+                    <video 
+                      src={videoUrl} 
+                      controls 
+                      className="w-full rounded-lg shadow-md"
+                      poster={content.image_url || undefined}
+                      playsInline
+                    >
+                      您的浏览器不支持视频播放
+                    </video>
+                  ) : isDouyin ? (
+                    // 抖音链接 - 显示点击观看按钮
+                    <div className="flex flex-col items-center justify-center py-8">
+                      <div className="relative mb-4">
+                        <div className="absolute inset-0 bg-gradient-to-r from-pink-500 to-red-500 rounded-full blur-xl opacity-50 animate-pulse"></div>
+                        <div className="relative w-24 h-24 bg-gradient-to-br from-pink-500 to-red-500 rounded-full flex items-center justify-center shadow-2xl">
+                          <Play className="h-12 w-12 text-white ml-1" />
+                        </div>
+                      </div>
+                      <p className="text-gray-600 mb-4 text-center">点击下方按钮观看抖音视频</p>
+                      <a 
+                        href={videoUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-red-500 text-white rounded-full font-bold shadow-lg hover:from-pink-600 hover:to-red-600 transition-all transform hover:scale-105"
+                      >
+                        <ExternalLink className="h-5 w-5" />
+                        点击观看抖音视频
+                      </a>
+                      <p className="text-xs text-gray-400 mt-3">将跳转到抖音App或网页版</p>
+                    </div>
+                  ) : (
+                    // 其他链接
+                    <div className="flex flex-col items-center justify-center py-8">
+                      <a 
+                        href={videoUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-full font-bold shadow-lg hover:from-green-600 hover:to-emerald-600 transition-all"
+                      >
+                        <ExternalLink className="h-5 w-5" />
+                        点击观看视频
+                      </a>
+                    </div>
+                  )}
                 </div>
-                <h3 className="relative text-white text-2xl font-bold text-center flex items-center justify-center gap-3">
-                  <span className="inline-block animate-bounce text-3xl">🎬</span>
-                  <span className="relative">
-                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-white via-yellow-200 to-white animate-[text-shine_3s_ease-in-out_infinite] bg-[length:200%_100%]">
-                      导航视频
+                {/* 动态标题 - 在视频下方 */}
+                <div className="relative bg-gradient-to-r from-green-500 to-emerald-500 py-4 px-4 overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-400 animate-pulse opacity-50"></div>
+                  <div className="absolute inset-0 overflow-hidden">
+                    <div className="absolute -left-4 top-0 h-full w-8 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-[shimmer_2s_infinite] transform -skew-x-12"></div>
+                  </div>
+                  <h3 className="relative text-white text-2xl font-bold text-center flex items-center justify-center gap-3">
+                    <span className="inline-block animate-bounce text-3xl">🎬</span>
+                    <span className="relative">
+                      <span className="bg-clip-text text-transparent bg-gradient-to-r from-white via-yellow-200 to-white animate-[text-shine_3s_ease-in-out_infinite] bg-[length:200%_100%]">
+                        导航视频
+                      </span>
+                      <span className="absolute -bottom-1 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-yellow-300 to-transparent animate-pulse"></span>
                     </span>
-                    <span className="absolute -bottom-1 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-yellow-300 to-transparent animate-pulse"></span>
-                  </span>
-                  <span className="inline-block animate-bounce text-3xl" style={{ animationDelay: '0.15s' }}>🎬</span>
-                </h3>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                    <span className="inline-block animate-bounce text-3xl" style={{ animationDelay: '0.15s' }}>🎬</span>
+                  </h3>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })()}
 
         {/* 门店信息 */}
         <Card className="mb-6 shadow-lg bg-gradient-to-r from-orange-50 to-pink-50 border-orange-200">
