@@ -6,27 +6,39 @@ import { S3Storage } from 'coze-coding-dev-sdk';
 const extractUrl = (text: string): string | null => {
   if (!text) return null;
   
-  // 如果已经是干净的URL，直接返回
-  if (/^https?:\/\/[^\s]+$/.test(text.trim())) {
-    return text.trim();
+  const trimmed = text.trim();
+  
+  // 如果已经是干净的URL（只包含URL，没有其他文字）
+  if (/^https?:\/\/[^\s]+$/.test(trimmed)) {
+    return trimmed;
   }
   
-  // 尝试匹配抖音短链接（可能包含下划线等字符）
-  const douyinMatch = text.match(/https?:\/\/v\.douyin\.com\/[a-zA-Z0-9_-]+\/?/);
-  if (douyinMatch) {
-    return douyinMatch[0];
+  // 尝试匹配各种抖音链接格式
+  // 1. 短链接 v.douyin.com/xxx
+  const shortMatch = trimmed.match(/https?:\/\/v\.douyin\.com\/[a-zA-Z0-9_-]+\/?/);
+  if (shortMatch) {
+    return shortMatch[0];
   }
   
-  // 再尝试匹配其他抖音链接
-  const douyinMatch2 = text.match(/https?:\/\/[^\s]*?douyin\.com\/[^\s]*/);
-  if (douyinMatch2) {
-    let url = douyinMatch2[0];
-    url = url.replace(/[^\w\/-]$/, '');
+  // 2. www.douyin.com 链接
+  const wwwMatch = trimmed.match(/https?:\/\/www\.douyin\.com\/[^\s]*/);
+  if (wwwMatch) {
+    let url = wwwMatch[0];
+    // 清理尾部特殊字符
+    url = url.replace(/[^\w\/\-_.~?=&%]$/, '');
     return url;
   }
   
-  // 最后匹配通用的 http/https URL
-  const urlMatch = text.match(/https?:\/\/[a-zA-Z0-9\-._~:/?#[\]@!$&'()*+,;=%]+/);
+  // 3. 其他 douyin.com 链接
+  const douyinMatch = trimmed.match(/https?:\/\/[^\s]*?douyin\.com\/[^\s]*/);
+  if (douyinMatch) {
+    let url = douyinMatch[0];
+    url = url.replace(/[^\w\/\-_.~?=&%]$/, '');
+    return url;
+  }
+  
+  // 4. 通用 http/https URL
+  const urlMatch = trimmed.match(/https?:\/\/[a-zA-Z0-9\-._~:/?#[\]@!$&'()*+,;=%]+/);
   return urlMatch ? urlMatch[0] : null;
 };
 

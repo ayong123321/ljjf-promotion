@@ -13,7 +13,6 @@ import { Send, CheckCircle, MapPin, Phone, Copy, Play, ExternalLink } from 'luci
 const isPlayableVideoUrl = (url: string): boolean => {
   if (!url) return false;
   const lowerUrl = url.toLowerCase();
-  // 检查是否是视频文件URL（包含视频扩展名或对象存储路径）
   const videoPatterns = ['.mp4', '.webm', '.ogg', '.mov', '.m4v', '/videos/'];
   return videoPatterns.some(pattern => lowerUrl.includes(pattern));
 };
@@ -22,37 +21,7 @@ const isPlayableVideoUrl = (url: string): boolean => {
 const isDouyinUrl = (url: string): boolean => {
   if (!url) return false;
   const lowerUrl = url.toLowerCase();
-  return lowerUrl.includes('douyin.com') || lowerUrl.includes('v.douyin.com');
-};
-
-// 从文本中提取URL（更精确的匹配，避免匹配到后面的乱码）
-const extractUrl = (text: string): string | null => {
-  if (!text) return null;
-  
-  // 如果已经是干净的URL，直接返回
-  if (/^https?:\/\/[^\s]+$/.test(text.trim())) {
-    return text.trim();
-  }
-  
-  // 尝试匹配抖音短链接（可能包含下划线等字符）
-  const douyinMatch = text.match(/https?:\/\/v\.douyin\.com\/[a-zA-Z0-9_-]+\/?/);
-  if (douyinMatch) {
-    return douyinMatch[0];
-  }
-  
-  // 再尝试匹配其他抖音链接
-  const douyinMatch2 = text.match(/https?:\/\/[^\s]*?douyin\.com\/[^\s]*/);
-  if (douyinMatch2) {
-    // 清理尾部可能的非URL字符
-    let url = douyinMatch2[0];
-    // 移除末尾的非字母数字字符（除了斜杠和下划线）
-    url = url.replace(/[^\w\/-]$/, '');
-    return url;
-  }
-  
-  // 最后匹配通用的 http/https URL
-  const urlMatch = text.match(/https?:\/\/[a-zA-Z0-9\-._~:/?#[\]@!$&'()*+,;=%]+/);
-  return urlMatch ? urlMatch[0] : null;
+  return lowerUrl.includes('douyin.com');
 };
 
 export default function PromotionPage() {
@@ -187,10 +156,12 @@ export default function PromotionPage() {
 
         {/* 导航视频 */}
         {content.video_url && (() => {
-          // 从文本中提取URL（处理分享文字）
-          const videoUrl = extractUrl(content.video_url) || content.video_url;
+          // 直接使用视频URL，数据库中已经是干净的链接
+          const videoUrl = content.video_url.trim();
           const isPlayable = isPlayableVideoUrl(videoUrl);
           const isDouyin = isDouyinUrl(videoUrl);
+          
+          console.log('视频URL:', videoUrl, '是否抖音:', isDouyin);
           
           return (
             <Card className="mb-6 overflow-hidden shadow-lg border-2 border-green-400">
