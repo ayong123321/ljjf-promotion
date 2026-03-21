@@ -183,43 +183,40 @@ export default function PromotionPage() {
                       您的浏览器不支持视频播放
                     </video>
                   ) : isDouyin ? (
-                    // 抖音链接 - 显示跳转按钮
-                    <div className="flex flex-col items-center justify-center py-8">
+                    // 抖音链接 - 显示可点击的播放按钮
+                    <a 
+                      href={videoUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex flex-col items-center justify-center py-8 cursor-pointer"
+                    >
                       <div className="relative mb-4">
                         <div className="absolute inset-0 bg-gradient-to-r from-pink-500 to-red-500 rounded-full blur-xl opacity-50 animate-pulse"></div>
-                        <div className="relative w-24 h-24 bg-gradient-to-br from-pink-500 to-red-500 rounded-full flex items-center justify-center shadow-2xl">
+                        <div className="relative w-24 h-24 bg-gradient-to-br from-pink-500 to-red-500 rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition-transform">
                           <Play className="h-12 w-12 text-white ml-1" />
                         </div>
                       </div>
-                      <p className="text-gray-600 mb-4 text-center">点击下方按钮观看抖音视频</p>
-                      <a 
-                        href={videoUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-red-500 text-white rounded-full font-bold shadow-lg hover:from-pink-600 hover:to-red-600 transition-all transform hover:scale-105"
-                      >
-                        <ExternalLink className="h-5 w-5" />
-                        点击观看抖音视频
-                      </a>
-                      <p className="text-xs text-gray-400 mt-3">将跳转到抖音App或网页版播放</p>
-                    </div>
+                      <p className="text-gray-600 mb-4 text-center">点击观看抖音视频</p>
+                      <span className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-red-500 text-white rounded-full font-bold shadow-lg hover:from-pink-600 hover:to-red-600 transition-all transform hover:scale-105">
+                        点击知道门店地址
+                      </span>
+                    </a>
                   ) : (
-                    // 其他链接 - 显示跳转按钮
-                    <div className="flex flex-col items-center justify-center py-8">
-                      <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center shadow-lg mb-4">
+                    // 其他链接 - 显示可点击的播放按钮
+                    <a 
+                      href={videoUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex flex-col items-center justify-center py-8 cursor-pointer"
+                    >
+                      <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center shadow-lg mb-4 hover:scale-110 transition-transform">
                         <Play className="h-10 w-10 text-white" />
                       </div>
                       <p className="text-gray-600 mb-4 text-center">点击下方按钮观看视频</p>
-                      <a 
-                        href={videoUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-full font-bold shadow-lg hover:from-green-600 hover:to-emerald-600 transition-all transform hover:scale-105"
-                      >
-                        <ExternalLink className="h-5 w-5" />
-                        点击观看视频
-                      </a>
-                    </div>
+                      <span className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-full font-bold shadow-lg hover:from-green-600 hover:to-emerald-600 transition-all transform hover:scale-105">
+                        点击知道门店地址
+                      </span>
+                    </a>
                   )}
                 </div>
                 {/* 动态标题 - 在视频下方 */}
