@@ -136,19 +136,10 @@ export default function PromotionPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 py-12 px-4">
       <div className="max-w-2xl mx-auto">
-        {/* 推广内容卡片 */}
+        {/* 标题和描述卡片 */}
         <Card className="mb-6 overflow-hidden shadow-lg">
-          {content.image_url && (
-            <div className="w-full flex justify-center bg-gray-100 p-2">
-              <img
-                src={content.image_url}
-                alt={content.title}
-                className="max-w-full max-h-[60vh] object-contain"
-              />
-            </div>
-          )}
           <CardHeader>
-            <CardTitle className="text-2xl">{content.title}</CardTitle>
+            <CardTitle className="text-2xl text-orange-500">{content.title}</CardTitle>
           </CardHeader>
           {content.description && (
             <CardContent>
@@ -367,6 +358,21 @@ export default function PromotionPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* 宣传图片 - 放在最下边 */}
+        {content.image_url && (
+          <Card className="mt-6 overflow-hidden shadow-lg">
+            <CardContent className="p-0">
+              <div className="w-full flex justify-center bg-gray-100 p-2">
+                <img
+                  src={content.image_url}
+                  alt={content.title}
+                  className="max-w-full max-h-[60vh] object-contain"
+                />
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
