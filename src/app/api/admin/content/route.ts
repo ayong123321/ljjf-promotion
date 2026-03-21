@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
     const videoUrlInput = formData.get('videoUrl') as string | null;
     const imageFile = formData.get('image') as File | null;
     const videoFile = formData.get('video') as File | null;
+    const storeImageFile = formData.get('storeImage') as File | null;
     const id = formData.get('id') as string | null;
 
     console.log('=== 收到推广内容请求 ===');
@@ -54,6 +55,7 @@ export async function POST(request: NextRequest) {
 
     let imageUrl: string | null = null;
     let videoUrl: string | null = null;
+    let storeImageUrl: string | null = null;
     let hasNewVideo = false;
 
     // 如果有上传图片,先上传到对象存储
@@ -84,6 +86,36 @@ export async function POST(request: NextRequest) {
         console.error('图片上传失败:', uploadError);
         return NextResponse.json({ 
           error: `图片上传失败: ${uploadError instanceof Error ? uploadError.message : '未知错误'}` 
+        }, { status: 500 });
+      }
+    }
+
+    // 如果有上传门店图片,上传到对象存储
+    if (storeImageFile && storeImageFile.size > 0) {
+      try {
+        console.log('开始上传门店图片...', storeImageFile.name, storeImageFile.size, 'bytes');
+        const buffer = Buffer.from(await storeImageFile.arrayBuffer());
+        
+        const originalName = storeImageFile.name;
+        const ext = originalName.split('.').pop() || 'jpg';
+        const safeFileName = `store_${Date.now()}.${ext}`;
+        const fileName = `promotions/${safeFileName}`;
+        
+        const storeImageKey = await storage.uploadFile({
+          fileContent: buffer,
+          fileName: fileName,
+          contentType: storeImageFile.type,
+        });
+
+        storeImageUrl = await storage.generatePresignedUrl({
+          key: storeImageKey,
+          expireTime: 31536000,
+        });
+        console.log('门店图片上传成功:', storeImageUrl?.substring(0, 80));
+      } catch (uploadError) {
+        console.error('门店图片上传失败:', uploadError);
+        return NextResponse.json({ 
+          error: `门店图片上传失败: ${uploadError instanceof Error ? uploadError.message : '未知错误'}` 
         }, { status: 500 });
       }
     }
@@ -142,6 +174,10 @@ export async function POST(request: NextRequest) {
         updateData.image_url = imageUrl;
       }
       
+      if (storeImageUrl) {
+        updateData.store_image_url = storeImageUrl;
+      }
+      
       // 只有在有新视频时才更新video_url
       if (hasNewVideo) {
         updateData.video_url = videoUrl;
@@ -174,6 +210,7 @@ export async function POST(request: NextRequest) {
           description: description || null,
           image_url: imageUrl,
           video_url: videoUrl,
+          store_image_url: storeImageUrl,
         })
         .select()
         .single();

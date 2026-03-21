@@ -43,6 +43,7 @@ export default function PromotionPage() {
     description: string | null;
     image_url: string | null;
     video_url: string | null;
+    store_image_url: string | null;
   } | null>(null);
   const [visitorRecordId, setVisitorRecordId] = useState<number | null>(null);
   const [wechatId, setWechatId] = useState('');
@@ -155,6 +156,21 @@ export default function PromotionPage() {
             </CardContent>
           )}
         </Card>
+
+        {/* 门店图片 */}
+        {content.store_image_url && (
+          <Card className="mb-6 overflow-hidden shadow-lg border-2 border-purple-300">
+            <CardContent className="p-0">
+              <div className="w-full flex justify-center bg-gray-100 p-2">
+                <img
+                  src={content.store_image_url}
+                  alt="门店图片"
+                  className="max-w-full max-h-[50vh] object-contain"
+                />
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* 导航视频 */}
         {content.video_url && (() => {

@@ -35,6 +35,7 @@ interface Content {
   description: string | null;
   image_url: string | null;
   video_url: string | null;
+  store_image_url: string | null;
   is_active: boolean;
   created_at: string;
 }
@@ -82,6 +83,7 @@ export default function AdminPage() {
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [storeImageFile, setStoreImageFile] = useState<File | null>(null);
   // 用于强制刷新文件输入框
   const [fileInputKey, setFileInputKey] = useState(0);
 
@@ -175,6 +177,9 @@ export default function AdminPage() {
       if (videoFile) {
         formData.append('video', videoFile);
       }
+      if (storeImageFile) {
+        formData.append('storeImage', storeImageFile);
+      }
 
       console.log('提交表单:', {
         id: contentForm.id,
@@ -203,6 +208,7 @@ export default function AdminPage() {
         setContentForm({ id: '', title: '', description: '', videoUrl: '' });
         setImageFile(null);
         setVideoFile(null);
+        setStoreImageFile(null);
         setFileInputKey(prev => prev + 1);
         fetchData();
       } else {
@@ -746,6 +752,20 @@ export default function AdminPage() {
                       onChange={(e) => setImageFile(e.target.files?.[0] || null)}
                     />
                   </div>
+                  <div>
+                    <Label htmlFor="storeImage">门店图片</Label>
+                    <p className="text-xs text-gray-500 mb-1">显示在落地页导航视频上方的独立图片</p>
+                    <Input
+                      id="storeImage"
+                      type="file"
+                      accept="image/*"
+                      key={`store-${fileInputKey}`}
+                      onChange={(e) => setStoreImageFile(e.target.files?.[0] || null)}
+                    />
+                    {storeImageFile && (
+                      <p className="text-xs text-green-600 mt-1">已选择: {storeImageFile.name}</p>
+                    )}
+                  </div>
                   <div className="border-t pt-4 mt-4">
                     <Label className="text-base font-semibold">导航视频（可选）</Label>
                     <p className="text-xs text-gray-500 mb-3">上传视频文件或粘贴视频链接，二选一即可</p>
@@ -803,6 +823,7 @@ export default function AdminPage() {
                           setContentForm({ id: '', title: '', description: '', videoUrl: '' });
                           setImageFile(null);
                           setVideoFile(null);
+                          setStoreImageFile(null);
                           setFileInputKey(prev => prev + 1);
                         }}
                       >
@@ -836,9 +857,20 @@ export default function AdminPage() {
                           )}
                           {content.image_url && (
                             <div className="mt-2">
+                              <p className="text-xs text-gray-500 mb-1">宣传图片:</p>
                               <img
                                 src={content.image_url}
                                 alt={content.title}
+                                className="w-32 h-32 object-cover rounded"
+                              />
+                            </div>
+                          )}
+                          {content.store_image_url && (
+                            <div className="mt-2">
+                              <p className="text-xs text-gray-500 mb-1">门店图片:</p>
+                              <img
+                                src={content.store_image_url}
+                                alt="门店图片"
                                 className="w-32 h-32 object-cover rounded"
                               />
                             </div>
