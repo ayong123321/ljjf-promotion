@@ -13,15 +13,15 @@ import { Send, CheckCircle, MapPin, Phone, Copy, Play, ExternalLink } from 'luci
 const isPlayableVideoUrl = (url: string): boolean => {
   if (!url) return false;
   const lowerUrl = url.toLowerCase();
-  // 可播放的视频格式
-  const playableExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.m4v'];
-  const isPlayable = playableExtensions.some(ext => lowerUrl.includes(ext));
   // 排除抖音、快手等短链接
-  const isShortLink = lowerUrl.includes('douyin.com') || 
-                      lowerUrl.includes('v.douyin.com') ||
-                      lowerUrl.includes('kuaishou.com') ||
-                      lowerUrl.includes('tiktok.com');
-  return isPlayable && !isShortLink;
+  if (lowerUrl.includes('douyin.com') || 
+      lowerUrl.includes('kuaishou.com') ||
+      lowerUrl.includes('tiktok.com')) {
+    return false;
+  }
+  // 可播放的视频格式（URL中包含这些扩展名）
+  const playablePatterns = ['.mp4', '.webm', '.ogg', '.mov', '.m4v', 'video/'];
+  return playablePatterns.some(pattern => lowerUrl.includes(pattern));
 };
 
 // 判断是否是抖音链接

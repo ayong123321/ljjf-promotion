@@ -82,6 +82,8 @@ export default function AdminPage() {
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  // 用于强制刷新文件输入框
+  const [fileInputKey, setFileInputKey] = useState(0);
 
   useEffect(() => {
     fetchData();
@@ -178,6 +180,8 @@ export default function AdminPage() {
         title: contentForm.title,
         hasImage: !!imageFile,
         hasVideo: !!videoFile,
+        videoFileName: videoFile?.name,
+        videoFileSize: videoFile?.size,
         videoUrl: contentForm.videoUrl
       });
 
@@ -190,7 +194,7 @@ export default function AdminPage() {
       
       if (data.data) {
         // 检查是否上传了视频
-        const videoUploaded = data.videoUploaded === true || (videoFile && videoFile.size > 0);
+        const videoUploaded = data.videoUploaded === true;
         let successMsg = '推广内容保存成功';
         if (videoUploaded) {
           successMsg += '（视频已上传）';
@@ -199,6 +203,7 @@ export default function AdminPage() {
         setContentForm({ id: '', title: '', description: '', videoUrl: '' });
         setImageFile(null);
         setVideoFile(null);
+        setFileInputKey(prev => prev + 1);
         fetchData();
       } else {
         toast.error(data.error || '保存失败');
@@ -749,18 +754,21 @@ export default function AdminPage() {
                       <div>
                         <Label htmlFor="video" className="text-sm">上传视频文件</Label>
                         <Input
+                          key={`video-${fileInputKey}`}
                           id="video"
                           type="file"
                           accept="video/*"
                           onChange={(e) => {
-                            setVideoFile(e.target.files?.[0] || null);
-                            if (e.target.files?.[0]) {
+                            const file = e.target.files?.[0];
+                            console.log('选择视频文件:', file?.name, file?.size, 'bytes');
+                            setVideoFile(file || null);
+                            if (file) {
                               setContentForm({ ...contentForm, videoUrl: '' });
                             }
                           }}
                         />
                         {videoFile && (
-                          <p className="text-xs text-green-600 mt-1">已选择: {videoFile.name}</p>
+                          <p className="text-xs text-green-600 mt-1">已选择: {videoFile.name} ({(videoFile.size / 1024 / 1024).toFixed(2)} MB)</p>
                         )}
                       </div>
                       
@@ -791,7 +799,12 @@ export default function AdminPage() {
                       <Button
                         type="button"
                         variant="outline"
-                        onClick={() => setContentForm({ id: '', title: '', description: '', videoUrl: '' })}
+                        onClick={() => {
+                          setContentForm({ id: '', title: '', description: '', videoUrl: '' });
+                          setImageFile(null);
+                          setVideoFile(null);
+                          setFileInputKey(prev => prev + 1);
+                        }}
                       >
                         取消
                       </Button>
@@ -848,6 +861,8 @@ export default function AdminPage() {
                               // 清空之前选择的文件
                               setImageFile(null);
                               setVideoFile(null);
+                              // 强制刷新文件输入框
+                              setFileInputKey(prev => prev + 1);
                             }}
                           >
                             编辑
