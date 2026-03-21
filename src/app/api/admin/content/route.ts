@@ -6,8 +6,13 @@ import { S3Storage } from 'coze-coding-dev-sdk';
 const extractUrl = (text: string): string | null => {
   if (!text) return null;
   
-  // 先尝试匹配抖音短链接
-  const douyinMatch = text.match(/https?:\/\/v\.douyin\.com\/[a-zA-Z0-9]+\/?/);
+  // 如果已经是干净的URL，直接返回
+  if (/^https?:\/\/[^\s]+$/.test(text.trim())) {
+    return text.trim();
+  }
+  
+  // 尝试匹配抖音短链接（可能包含下划线等字符）
+  const douyinMatch = text.match(/https?:\/\/v\.douyin\.com\/[a-zA-Z0-9_-]+\/?/);
   if (douyinMatch) {
     return douyinMatch[0];
   }
@@ -16,7 +21,7 @@ const extractUrl = (text: string): string | null => {
   const douyinMatch2 = text.match(/https?:\/\/[^\s]*?douyin\.com\/[^\s]*/);
   if (douyinMatch2) {
     let url = douyinMatch2[0];
-    url = url.replace(/[^\w\/]$/, '');
+    url = url.replace(/[^\w\/-]$/, '');
     return url;
   }
   
