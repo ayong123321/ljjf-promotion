@@ -84,6 +84,9 @@ export default function AdminPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [storeImageFile, setStoreImageFile] = useState<File | null>(null);
+  // 当前编辑的内容的图片URL（用于显示预览）
+  const [currentImagePreview, setCurrentImagePreview] = useState<string | null>(null);
+  const [currentStoreImagePreview, setCurrentStoreImagePreview] = useState<string | null>(null);
   // 用于强制刷新文件输入框
   const [fileInputKey, setFileInputKey] = useState(0);
 
@@ -209,6 +212,8 @@ export default function AdminPage() {
         setImageFile(null);
         setVideoFile(null);
         setStoreImageFile(null);
+        setCurrentImagePreview(null);
+        setCurrentStoreImagePreview(null);
         setFileInputKey(prev => prev + 1);
         fetchData();
       } else {
@@ -749,8 +754,27 @@ export default function AdminPage() {
                       id="image"
                       type="file"
                       accept="image/*"
-                      onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                      key={`image-${fileInputKey}`}
+                      onChange={(e) => {
+                        setImageFile(e.target.files?.[0] || null);
+                        if (e.target.files?.[0]) {
+                          setCurrentImagePreview(null); // 选择新文件时清除旧预览
+                        }
+                      }}
                     />
+                    {imageFile && (
+                      <p className="text-xs text-green-600 mt-1">已选择: {imageFile.name}</p>
+                    )}
+                    {currentImagePreview && !imageFile && (
+                      <div className="mt-2">
+                        <p className="text-xs text-blue-600 mb-1">当前图片（不上传新图片将保留）:</p>
+                        <img
+                          src={currentImagePreview}
+                          alt="当前图片"
+                          className="w-32 h-32 object-cover rounded border"
+                        />
+                      </div>
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="storeImage">门店图片</Label>
@@ -760,10 +784,25 @@ export default function AdminPage() {
                       type="file"
                       accept="image/*"
                       key={`store-${fileInputKey}`}
-                      onChange={(e) => setStoreImageFile(e.target.files?.[0] || null)}
+                      onChange={(e) => {
+                        setStoreImageFile(e.target.files?.[0] || null);
+                        if (e.target.files?.[0]) {
+                          setCurrentStoreImagePreview(null);
+                        }
+                      }}
                     />
                     {storeImageFile && (
                       <p className="text-xs text-green-600 mt-1">已选择: {storeImageFile.name}</p>
+                    )}
+                    {currentStoreImagePreview && !storeImageFile && (
+                      <div className="mt-2">
+                        <p className="text-xs text-blue-600 mb-1">当前门店图片（不上传新图片将保留）:</p>
+                        <img
+                          src={currentStoreImagePreview}
+                          alt="当前门店图片"
+                          className="w-32 h-32 object-cover rounded border"
+                        />
+                      </div>
                     )}
                   </div>
                   <div className="border-t pt-4 mt-4">
@@ -824,6 +863,8 @@ export default function AdminPage() {
                           setImageFile(null);
                           setVideoFile(null);
                           setStoreImageFile(null);
+                          setCurrentImagePreview(null);
+                          setCurrentStoreImagePreview(null);
                           setFileInputKey(prev => prev + 1);
                         }}
                       >
@@ -895,9 +936,13 @@ export default function AdminPage() {
                                 description: content.description || '',
                                 videoUrl: content.video_url || '',
                               });
+                              // 设置当前图片预览
+                              setCurrentImagePreview(content.image_url);
+                              setCurrentStoreImagePreview(content.store_image_url);
                               // 清空之前选择的文件
                               setImageFile(null);
                               setVideoFile(null);
+                              setStoreImageFile(null);
                               // 强制刷新文件输入框
                               setFileInputKey(prev => prev + 1);
                             }}

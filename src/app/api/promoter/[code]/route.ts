@@ -38,13 +38,15 @@ export async function GET(
     const totalVisits = visitorRecords?.length || 0;
     const wechatSubmissions = visitorRecords?.filter(v => v.wechat_id).length || 0;
 
-    // 获取激活的推广内容
-    const { data: content } = await client
+    // 获取激活的推广内容（按创建时间倒序取第一条）
+    const { data: contents } = await client
       .from('promotion_contents')
       .select('*')
       .eq('is_active', true)
-      .limit(1)
-      .single();
+      .order('created_at', { ascending: false })
+      .limit(1);
+    
+    const content = contents?.[0] || null;
 
     return NextResponse.json({
       data: {
