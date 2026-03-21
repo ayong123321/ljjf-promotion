@@ -231,7 +231,7 @@ export default function PromotionPage() {
                     <span className="inline-block animate-bounce text-3xl">🎬</span>
                     <span className="relative">
                       <span className="bg-clip-text text-transparent bg-gradient-to-r from-white via-yellow-200 to-white animate-[text-shine_3s_ease-in-out_infinite] bg-[length:200%_100%]">
-                        导航视频
+                        假发店地址导航视频
                       </span>
                       <span className="absolute -bottom-1 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-yellow-300 to-transparent animate-pulse"></span>
                     </span>
