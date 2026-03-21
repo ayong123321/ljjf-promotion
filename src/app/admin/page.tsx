@@ -159,7 +159,10 @@ export default function AdminPage() {
       const formData = new FormData();
       formData.append('title', contentForm.title);
       formData.append('description', contentForm.description);
-      formData.append('videoUrl', contentForm.videoUrl || '');
+      // 只有在没有视频文件时才添加 videoUrl
+      if (!videoFile && contentForm.videoUrl) {
+        formData.append('videoUrl', contentForm.videoUrl);
+      }
       if (contentForm.id) {
         formData.append('id', contentForm.id);
       }
@@ -170,15 +173,26 @@ export default function AdminPage() {
         formData.append('video', videoFile);
       }
 
+      console.log('提交表单:', {
+        id: contentForm.id,
+        title: contentForm.title,
+        hasImage: !!imageFile,
+        hasVideo: !!videoFile,
+        videoUrl: contentForm.videoUrl
+      });
+
       const res = await fetch('/api/admin/content', {
         method: 'POST',
         body: formData,
       });
       const data = await res.json();
+      console.log('API响应:', data);
+      
       if (data.data) {
-        // 显示上传成功信息
+        // 检查是否上传了视频
+        const videoUploaded = data.videoUploaded === true || (videoFile && videoFile.size > 0);
         let successMsg = '推广内容保存成功';
-        if (videoFile) {
+        if (videoUploaded) {
           successMsg += '（视频已上传）';
         }
         toast.success(successMsg, { duration: 3000 });
@@ -190,6 +204,7 @@ export default function AdminPage() {
         toast.error(data.error || '保存失败');
       }
     } catch (error) {
+      console.error('保存失败:', error);
       toast.error('保存失败');
     }
   };

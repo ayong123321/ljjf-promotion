@@ -41,7 +41,12 @@ export async function POST(request: NextRequest) {
     const videoFile = formData.get('video') as File | null;
     const id = formData.get('id') as string | null;
 
-    console.log('收到请求:', { title, id, hasImage: !!imageFile, hasVideo: !!videoFile, videoUrlInput });
+    console.log('=== 收到推广内容请求 ===');
+    console.log('标题:', title);
+    console.log('ID:', id);
+    console.log('图片文件:', imageFile ? `${imageFile.name} (${imageFile.size} bytes)` : '无');
+    console.log('视频文件:', videoFile ? `${videoFile.name} (${videoFile.size} bytes)` : '无');
+    console.log('视频链接:', videoUrlInput || '无');
 
     if (!title) {
       return NextResponse.json({ error: '标题不能为空' }, { status: 400 });
@@ -53,7 +58,7 @@ export async function POST(request: NextRequest) {
 
     // 如果有上传图片,先上传到对象存储
     if (imageFile && imageFile.size > 0) {
-      console.log('上传图片:', imageFile.name, imageFile.size);
+      console.log('开始上传图片...');
       const buffer = Buffer.from(await imageFile.arrayBuffer());
       const fileName = `promotions/${Date.now()}_${imageFile.name}`;
       
@@ -67,12 +72,12 @@ export async function POST(request: NextRequest) {
         key: imageKey,
         expireTime: 31536000, // 1年有效期
       });
-      console.log('图片上传成功:', imageUrl?.substring(0, 50));
+      console.log('图片上传成功:', imageUrl?.substring(0, 80));
     }
 
     // 如果有上传视频,上传到对象存储
     if (videoFile && videoFile.size > 0) {
-      console.log('上传视频:', videoFile.name, videoFile.size);
+      console.log('开始上传视频...');
       const buffer = Buffer.from(await videoFile.arrayBuffer());
       const fileName = `videos/${Date.now()}_${videoFile.name}`;
       
@@ -87,11 +92,12 @@ export async function POST(request: NextRequest) {
         expireTime: 31536000, // 1年有效期
       });
       hasNewVideo = true;
-      console.log('视频上传成功:', videoUrl?.substring(0, 50));
+      console.log('视频上传成功:', videoUrl?.substring(0, 80));
     } else if (videoUrlInput && videoUrlInput.trim()) {
       // 如果没有上传视频但有链接，使用链接
       videoUrl = videoUrlInput.trim();
       hasNewVideo = true;
+      console.log('使用视频链接:', videoUrl);
     }
 
     const client = getSupabaseClient();
@@ -113,7 +119,8 @@ export async function POST(request: NextRequest) {
         updateData.video_url = videoUrl;
       }
 
-      console.log('更新数据:', { id, updateData });
+      console.log('更新数据库, ID:', id);
+      console.log('更新数据:', JSON.stringify(updateData, null, 2));
 
       const { data, error } = await client
         .from('promotion_contents')
@@ -127,10 +134,11 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
-      console.log('更新成功:', data);
+      console.log('更新成功:', JSON.stringify(data, null, 2));
       return NextResponse.json({ data, videoUploaded: hasNewVideo });
     } else {
       // 创建新内容
+      console.log('创建新内容');
       const { data, error } = await client
         .from('promotion_contents')
         .insert({
@@ -147,7 +155,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
-      console.log('创建成功:', data);
+      console.log('创建成功:', JSON.stringify(data, null, 2));
       return NextResponse.json({ data, videoUploaded: hasNewVideo });
     }
   } catch (error) {
