@@ -123,6 +123,18 @@ export default function AdminPage() {
       const contentData = await contentRes.json();
       if (contentData.data) {
         setContents(contentData.data);
+        // 如果有内容，自动加载第一个到编辑表单
+        if (contentData.data.length > 0) {
+          const firstContent = contentData.data[0];
+          setContentForm({
+            id: firstContent.id.toString(),
+            title: firstContent.title,
+            description: firstContent.description || '',
+            videoUrl: firstContent.video_url || '',
+          });
+          setCurrentImagePreview(firstContent.image_url);
+          setCurrentStoreImagePreview(firstContent.store_image_url);
+        }
       }
     } catch (error) {
       toast.error('获取数据失败');
@@ -725,8 +737,13 @@ export default function AdminPage() {
           <div className="grid gap-6 md:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle>{contentForm.id ? '编辑推广内容' : '创建推广内容'}</CardTitle>
-                <CardDescription>设置推广页面展示的内容和图片</CardDescription>
+                <CardTitle className="flex items-center gap-2">
+                  {contentForm.id ? '编辑推广内容' : '创建推广内容'}
+                  <span className="text-xs bg-green-500 text-white px-2 py-1 rounded">当前使用中</span>
+                </CardTitle>
+                <CardDescription>
+                  修改此内容会立即更新所有落地页。上传新图片会替换旧图片，不上传则保留原图片。
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleCreateContent} className="space-y-4">
