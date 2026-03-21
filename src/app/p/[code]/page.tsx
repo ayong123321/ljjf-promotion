@@ -7,7 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Send, CheckCircle, MapPin, Phone, Copy, Play } from 'lucide-react';
+import { Send, CheckCircle, MapPin, Phone, Copy, Play, X } from 'lucide-react';
+
+// 检测是否在微信环境
+const isWechat = () => {
+  if (typeof window === 'undefined') return false;
+  const ua = navigator.userAgent.toLowerCase();
+  return ua.includes('micromessenger');
+};
 
 export default function PromotionPage() {
   const params = useParams();
@@ -24,6 +31,7 @@ export default function PromotionPage() {
   const [visitorRecordId, setVisitorRecordId] = useState<number | null>(null);
   const [wechatId, setWechatId] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
 
   useEffect(() => {
     recordVisit();
@@ -143,10 +151,16 @@ export default function PromotionPage() {
           <Card className="mb-6 overflow-hidden shadow-lg border-2 border-green-400">
             <CardContent className="p-0">
               <div className="p-4 bg-gradient-to-b from-green-50 to-white">
-                {/* 直接跳转抖音 */}
-                <a 
-                  href={content.video_url.trim()}
-                  className="w-full flex flex-col items-center justify-center py-8 cursor-pointer block"
+                {/* 点击按钮 */}
+                <button 
+                  onClick={() => {
+                    if (isWechat()) {
+                      setShowGuide(true);
+                    } else {
+                      window.location.href = content.video_url!.trim();
+                    }
+                  }}
+                  className="w-full flex flex-col items-center justify-center py-8 cursor-pointer"
                 >
                   <div className="relative mb-4">
                     <div className="absolute inset-0 bg-gradient-to-r from-pink-500 to-red-500 rounded-full blur-xl opacity-50 animate-pulse"></div>
@@ -158,7 +172,7 @@ export default function PromotionPage() {
                   <span className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-pink-500 to-red-500 text-white rounded-full font-bold text-lg shadow-lg hover:from-pink-600 hover:to-red-600 transition-all transform hover:scale-105">
                     点击知道门店地址
                   </span>
-                </a>
+                </button>
               </div>
               <div className="relative bg-gradient-to-r from-green-500 to-emerald-500 py-4 px-4 overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-400 animate-pulse opacity-50"></div>
@@ -178,6 +192,35 @@ export default function PromotionPage() {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* 微信引导弹窗 */}
+        {showGuide && (
+          <div 
+            className="fixed inset-0 z-50 flex items-start justify-end"
+            onClick={() => setShowGuide(false)}
+          >
+            {/* 半透明背景 */}
+            <div className="absolute inset-0 bg-black/60"></div>
+            
+            {/* 引导内容 */}
+            <div className="relative mt-4 mr-4 max-w-xs animate-pulse">
+              {/* 橙色弹窗 */}
+              <div className="bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl p-5 shadow-2xl">
+                <div className="text-white text-center">
+                  {/* 箭头指向右上角 */}
+                  <div className="absolute -top-2 right-8 w-0 h-0 border-l-8 border-r-8 border-b-8 border-transparent border-b-orange-500"></div>
+                  
+                  <p className="text-xl font-bold mb-3">👆 点击右上角</p>
+                  <div className="bg-white/20 rounded-xl p-4 mb-3">
+                    <p className="text-lg font-medium">点击「...」</p>
+                    <p className="text-base mt-2">选择「在浏览器打开」</p>
+                  </div>
+                  <p className="text-sm opacity-90">即可跳转到抖音观看视频</p>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* 门店信息 */}
