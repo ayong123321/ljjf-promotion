@@ -58,41 +58,69 @@ export async function POST(request: NextRequest) {
 
     // 如果有上传图片,先上传到对象存储
     if (imageFile && imageFile.size > 0) {
-      console.log('开始上传图片...');
-      const buffer = Buffer.from(await imageFile.arrayBuffer());
-      const fileName = `promotions/${Date.now()}_${imageFile.name}`;
-      
-      const imageKey = await storage.uploadFile({
-        fileContent: buffer,
-        fileName: fileName,
-        contentType: imageFile.type,
-      });
+      try {
+        console.log('开始上传图片...', imageFile.name, imageFile.size, 'bytes');
+        const buffer = Buffer.from(await imageFile.arrayBuffer());
+        
+        // 处理文件名，移除特殊字符和中文
+        const originalName = imageFile.name;
+        const ext = originalName.split('.').pop() || 'jpg';
+        const safeFileName = `image_${Date.now()}.${ext}`;
+        const fileName = `promotions/${safeFileName}`;
+        console.log('原始文件名:', originalName, '-> 安全文件名:', fileName);
+        
+        const imageKey = await storage.uploadFile({
+          fileContent: buffer,
+          fileName: fileName,
+          contentType: imageFile.type,
+        });
 
-      imageUrl = await storage.generatePresignedUrl({
-        key: imageKey,
-        expireTime: 31536000, // 1年有效期
-      });
-      console.log('图片上传成功:', imageUrl?.substring(0, 80));
+        imageUrl = await storage.generatePresignedUrl({
+          key: imageKey,
+          expireTime: 31536000, // 1年有效期
+        });
+        console.log('图片上传成功:', imageUrl?.substring(0, 80));
+      } catch (uploadError) {
+        console.error('图片上传失败:', uploadError);
+        return NextResponse.json({ 
+          error: `图片上传失败: ${uploadError instanceof Error ? uploadError.message : '未知错误'}` 
+        }, { status: 500 });
+      }
     }
 
     // 如果有上传视频,上传到对象存储
     if (videoFile && videoFile.size > 0) {
-      console.log('开始上传视频...');
-      const buffer = Buffer.from(await videoFile.arrayBuffer());
-      const fileName = `videos/${Date.now()}_${videoFile.name}`;
-      
-      const videoKey = await storage.uploadFile({
-        fileContent: buffer,
-        fileName: fileName,
-        contentType: videoFile.type || 'video/mp4',
-      });
+      try {
+        console.log('开始上传视频...', videoFile.name, videoFile.size, 'bytes');
+        const buffer = Buffer.from(await videoFile.arrayBuffer());
+        console.log('视频buffer创建完成, 大小:', buffer.length);
+        
+        // 处理文件名，移除特殊字符和中文，只保留字母数字和扩展名
+        const originalName = videoFile.name;
+        const ext = originalName.split('.').pop() || 'mp4';
+        const safeFileName = `video_${Date.now()}.${ext}`;
+        const fileName = `videos/${safeFileName}`;
+        console.log('原始文件名:', originalName, '-> 安全文件名:', fileName);
+        
+        const videoKey = await storage.uploadFile({
+          fileContent: buffer,
+          fileName: fileName,
+          contentType: videoFile.type || 'video/mp4',
+        });
+        console.log('上传完成, 返回key:', videoKey);
 
-      videoUrl = await storage.generatePresignedUrl({
-        key: videoKey,
-        expireTime: 31536000, // 1年有效期
-      });
-      hasNewVideo = true;
-      console.log('视频上传成功:', videoUrl?.substring(0, 80));
+        videoUrl = await storage.generatePresignedUrl({
+          key: videoKey,
+          expireTime: 31536000, // 1年有效期
+        });
+        hasNewVideo = true;
+        console.log('视频URL生成成功:', videoUrl?.substring(0, 80));
+      } catch (uploadError) {
+        console.error('视频上传失败:', uploadError);
+        return NextResponse.json({ 
+          error: `视频上传失败: ${uploadError instanceof Error ? uploadError.message : '未知错误'}` 
+        }, { status: 500 });
+      }
     } else if (videoUrlInput && videoUrlInput.trim()) {
       // 如果没有上传视频但有链接，使用链接
       videoUrl = videoUrlInput.trim();

@@ -845,6 +845,9 @@ export default function AdminPage() {
                                 description: content.description || '',
                                 videoUrl: content.video_url || '',
                               });
+                              // 清空之前选择的文件
+                              setImageFile(null);
+                              setVideoFile(null);
                             }}
                           >
                             编辑
