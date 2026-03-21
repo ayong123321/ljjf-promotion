@@ -24,6 +24,7 @@ export default function PromotionPage() {
   const [visitorRecordId, setVisitorRecordId] = useState<number | null>(null);
   const [wechatId, setWechatId] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
 
   useEffect(() => {
     recordVisit();
@@ -90,6 +91,43 @@ export default function PromotionPage() {
     toast.success('电话号码已复制');
   };
 
+  // 检测是否在微信中
+  const isWechat = () => {
+    const ua = navigator.userAgent.toLowerCase();
+    return ua.includes('micromessenger');
+  };
+
+  // 打开抖音视频 - 使用深度链接
+  const openDouyinVideo = () => {
+    if (!content?.video_url) return;
+    
+    const videoUrl = content.video_url.trim();
+    
+    // 提取抖音短链接中的视频ID
+    const shortCodeMatch = videoUrl.match(/v\.douyin\.com\/([a-zA-Z0-9_-]+)/);
+    
+    if (shortCodeMatch) {
+      const shortCode = shortCodeMatch[1];
+      
+      if (isWechat()) {
+        // 在微信中：显示引导提示，让用户在浏览器中打开
+        setShowGuide(true);
+      } else {
+        // 非微信环境：使用scheme直接打开抖音
+        const douyinScheme = `snssdk1128://webview?url=${encodeURIComponent(videoUrl)}`;
+        window.location.href = douyinScheme;
+        
+        // 备用：如果scheme失败，使用普通链接
+        setTimeout(() => {
+          window.location.href = videoUrl;
+        }, 1000);
+      }
+    } else {
+      // 直接使用原始链接
+      window.location.href = videoUrl;
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
@@ -111,6 +149,38 @@ export default function PromotionPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 py-12 px-4">
+      {/* 微信引导提示弹窗 */}
+      {showGuide && (
+        <div 
+          className="fixed inset-0 bg-black/70 z-50 flex items-start justify-center pt-20"
+          onClick={() => setShowGuide(false)}
+        >
+          <div className="bg-white rounded-xl p-6 mx-4 max-w-sm shadow-2xl" onClick={e => e.stopPropagation()}>
+            <h3 className="text-xl font-bold text-center mb-4 text-orange-500">请在浏览器中打开</h3>
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 p-3 bg-orange-50 rounded-lg">
+                <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold">1</div>
+                <p className="text-gray-700">点击右上角 <span className="font-bold text-orange-500">"..."</span></p>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-orange-50 rounded-lg">
+                <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold">2</div>
+                <p className="text-gray-700">选择 <span className="font-bold text-orange-500">"在浏览器打开"</span></p>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold">✓</div>
+                <p className="text-gray-700">自动跳转到抖音播放视频</p>
+              </div>
+            </div>
+            <button 
+              className="w-full mt-4 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg font-bold"
+              onClick={() => setShowGuide(false)}
+            >
+              我知道了
+            </button>
+          </div>
+        </div>
+      )}
+      
       <div className="max-w-2xl mx-auto">
         {/* 标题和描述卡片 */}
         <Card className="mb-6 overflow-hidden shadow-lg">
@@ -145,12 +215,10 @@ export default function PromotionPage() {
             <CardContent className="p-0">
               {/* 视频区域 */}
               <div className="p-4 bg-gradient-to-b from-green-50 to-white">
-                {/* 抖音链接 - 显示可点击的播放按钮 */}
-                <a 
-                  href={content.video_url.trim()}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex flex-col items-center justify-center py-8 cursor-pointer block"
+                {/* 使用按钮点击，通过JS控制跳转 */}
+                <button 
+                  onClick={openDouyinVideo}
+                  className="w-full flex flex-col items-center justify-center py-8 cursor-pointer"
                 >
                   <div className="relative mb-4">
                     <div className="absolute inset-0 bg-gradient-to-r from-pink-500 to-red-500 rounded-full blur-xl opacity-50 animate-pulse"></div>
@@ -162,12 +230,7 @@ export default function PromotionPage() {
                   <span className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-pink-500 to-red-500 text-white rounded-full font-bold text-lg shadow-lg hover:from-pink-600 hover:to-red-600 transition-all transform hover:scale-105">
                     点击知道门店地址
                   </span>
-                </a>
-                {/* 显示实际链接，方便用户复制 */}
-                <div className="mt-4 p-3 bg-gray-100 rounded-lg text-center">
-                  <p className="text-xs text-gray-500 mb-1">视频链接（可长按复制）：</p>
-                  <p className="text-sm text-blue-600 break-all select-all">{content.video_url.trim()}</p>
-                </div>
+                </button>
               </div>
                 {/* 动态标题 - 在视频下方 */}
                 <div className="relative bg-gradient-to-r from-green-500 to-emerald-500 py-4 px-4 overflow-hidden">
