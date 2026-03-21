@@ -157,13 +157,65 @@ export default function AdminPage() {
 
   const handleCreateContent = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // 显示加载状态
+    const loadingToast = toast.loading('正在处理...');
+    
     try {
+      let finalVideoUrl = contentForm.videoUrl;
+      
+      // 如果有视频链接但没有视频文件，尝试解析链接
+      if (!videoFile && contentForm.videoUrl) {
+        const url = contentForm.videoUrl;
+        // 检查是否是抖音、快手等需要解析的链接
+        if (url.includes('douyin.com') || url.includes('v.douyin.com') || url.includes('kuaishou.com')) {
+          toast.dismiss(loadingToast);
+          const parsingToast = toast.loading('正在解析视频链接，请稍候...');
+          
+          try {
+            const parseRes = await fetch('/api/video-parse', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ url }),
+            });
+            const parseData = await parseRes.json();
+            
+            toast.dismiss(parsingToast);
+            
+            if (parseData.success && parseData.playableUrl) {
+              // 解析成功，使用解析后的URL
+              finalVideoUrl = parseData.playableUrl;
+              toast.success('视频链接解析成功！');
+            } else {
+              // 解析失败，显示操作指引
+              const instructions = parseData.instructions || ['请下载视频后上传文件'];
+              toast.error(
+                <div>
+                  <p className="font-bold">{parseData.error || '视频链接解析失败'}</p>
+                  <ul className="text-xs mt-1">
+                    {instructions.map((item: string, i: number) => (
+                      <li key={i}>{item}</li>
+                    ))}
+                  </ul>
+                </div>,
+                { duration: 8000 }
+              );
+              return;
+            }
+          } catch (parseError) {
+            toast.dismiss(parsingToast);
+            toast.error('视频链接解析失败，请下载视频后上传文件');
+            return;
+          }
+        }
+      }
+      
       const formData = new FormData();
       formData.append('title', contentForm.title);
       formData.append('description', contentForm.description);
       // 只有在没有视频文件时才添加 videoUrl
-      if (!videoFile && contentForm.videoUrl) {
-        formData.append('videoUrl', contentForm.videoUrl);
+      if (!videoFile && finalVideoUrl) {
+        formData.append('videoUrl', finalVideoUrl);
       }
       if (contentForm.id) {
         formData.append('id', contentForm.id);
@@ -182,7 +234,7 @@ export default function AdminPage() {
         hasVideo: !!videoFile,
         videoFileName: videoFile?.name,
         videoFileSize: videoFile?.size,
-        videoUrl: contentForm.videoUrl
+        videoUrl: finalVideoUrl
       });
 
       const res = await fetch('/api/admin/content', {
@@ -191,6 +243,8 @@ export default function AdminPage() {
       });
       const data = await res.json();
       console.log('API响应:', data);
+      
+      toast.dismiss(loadingToast);
       
       if (data.data) {
         // 检查是否上传了视频
@@ -209,6 +263,7 @@ export default function AdminPage() {
         toast.error(data.error || '保存失败');
       }
     } catch (error) {
+      toast.dismiss(loadingToast);
       console.error('保存失败:', error);
       toast.error('保存失败');
     }

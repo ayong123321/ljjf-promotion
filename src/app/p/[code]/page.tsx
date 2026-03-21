@@ -7,29 +7,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Send, CheckCircle, MapPin, Phone, Copy, Play, ExternalLink } from 'lucide-react';
+import { Send, CheckCircle, MapPin, Phone, Copy, ExternalLink } from 'lucide-react';
 
-// 判断是否是可播放的视频URL（mp4等直接可播放的格式）
+// 判断是否是可播放的视频URL
 const isPlayableVideoUrl = (url: string): boolean => {
   if (!url) return false;
   const lowerUrl = url.toLowerCase();
-  // 排除抖音、快手等短链接（这些需要跳转才能看）
-  if (lowerUrl.includes('douyin.com') || 
-      lowerUrl.includes('v.douyin.com') ||
-      lowerUrl.includes('kuaishou.com') ||
-      lowerUrl.includes('tiktok.com')) {
-    return false;
-  }
-  // 检查是否是视频文件URL（包含视频扩展名）
-  const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.m4v', '.avi', '.mkv'];
-  return videoExtensions.some(ext => lowerUrl.includes(ext));
-};
-
-// 判断是否是抖音链接
-const isDouyinUrl = (url: string): boolean => {
-  if (!url) return false;
-  const lowerUrl = url.toLowerCase();
-  return lowerUrl.includes('douyin.com') || lowerUrl.includes('v.douyin.com');
+  // 检查是否是视频文件URL（包含视频扩展名或对象存储路径）
+  const videoPatterns = ['.mp4', '.webm', '.ogg', '.mov', '.m4v', '/videos/', 'video/'];
+  return videoPatterns.some(pattern => lowerUrl.includes(pattern));
 };
 
 // 从文本中提取URL
@@ -163,15 +149,13 @@ export default function PromotionPage() {
           )}
         </Card>
 
-        {/* 导航视频 - 支持抖音链接和普通视频 */}
+        {/* 导航视频 */}
         {content.video_url && (() => {
-          // 从文本中提取URL（处理抖音分享文字）
+          // 从文本中提取URL（处理分享文字）
           const videoUrl = extractUrl(content.video_url) || content.video_url;
-          const isDouyin = isDouyinUrl(videoUrl);
           const isPlayable = isPlayableVideoUrl(videoUrl);
           
           console.log('视频URL:', videoUrl);
-          console.log('是否抖音链接:', isDouyin);
           console.log('是否可播放:', isPlayable);
           
           return (
@@ -180,7 +164,7 @@ export default function PromotionPage() {
                 {/* 视频区域 */}
                 <div className="p-4 bg-gradient-to-b from-green-50 to-white">
                   {isPlayable ? (
-                    // 普通视频 - 直接播放
+                    // 可播放视频 - 直接播放
                     <video 
                       src={videoUrl} 
                       controls 
@@ -195,35 +179,18 @@ export default function PromotionPage() {
                       <source src={videoUrl} type="video/mp4" />
                       您的浏览器不支持视频播放
                     </video>
-                  ) : isDouyin ? (
-                    // 抖音链接 - 显示点击观看按钮
-                    <div className="flex flex-col items-center justify-center py-8">
-                      <div className="relative mb-4">
-                        <div className="absolute inset-0 bg-gradient-to-r from-pink-500 to-red-500 rounded-full blur-xl opacity-50 animate-pulse"></div>
-                        <div className="relative w-24 h-24 bg-gradient-to-br from-pink-500 to-red-500 rounded-full flex items-center justify-center shadow-2xl">
-                          <Play className="h-12 w-12 text-white ml-1" />
-                        </div>
-                      </div>
-                      <p className="text-gray-600 mb-4 text-center">点击下方按钮观看抖音视频</p>
-                      <a 
-                        href={videoUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-red-500 text-white rounded-full font-bold shadow-lg hover:from-pink-600 hover:to-red-600 transition-all transform hover:scale-105"
-                      >
-                        <ExternalLink className="h-5 w-5" />
-                        点击观看抖音视频
-                      </a>
-                      <p className="text-xs text-gray-400 mt-3">将跳转到抖音App或网页版</p>
-                    </div>
                   ) : (
-                    // 其他链接
+                    // 不可播放链接 - 显示跳转按钮
                     <div className="flex flex-col items-center justify-center py-8">
+                      <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center shadow-lg mb-4">
+                        <ExternalLink className="h-10 w-10 text-white" />
+                      </div>
+                      <p className="text-gray-600 mb-4 text-center">点击下方按钮观看视频</p>
                       <a 
                         href={videoUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-full font-bold shadow-lg hover:from-green-600 hover:to-emerald-600 transition-all"
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-full font-bold shadow-lg hover:from-green-600 hover:to-emerald-600 transition-all transform hover:scale-105"
                       >
                         <ExternalLink className="h-5 w-5" />
                         点击观看视频
