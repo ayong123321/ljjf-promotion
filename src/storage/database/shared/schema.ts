@@ -32,6 +32,7 @@ export const promotionContents = pgTable(
     title: varchar("title", { length: 200 }).notNull(),
     description: text("description"),
     imageUrl: text("image_url"),
+    videoUrl: text("video_url"),
     isActive: boolean("is_active").default(true).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),

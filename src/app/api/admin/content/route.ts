@@ -36,6 +36,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const title = formData.get('title') as string;
     const description = formData.get('description') as string;
+    const videoUrl = formData.get('videoUrl') as string | null;
     const imageFile = formData.get('image') as File | null;
     const id = formData.get('id') as string | null;
 
@@ -66,9 +67,10 @@ export async function POST(request: NextRequest) {
 
     if (id) {
       // 更新现有内容
-      const updateData: any = {
+      const updateData: Record<string, any> = {
         title,
         description: description || null,
+        video_url: videoUrl || null,
         updated_at: new Date().toISOString(),
       };
       
@@ -96,6 +98,7 @@ export async function POST(request: NextRequest) {
           title,
           description: description || null,
           image_url: imageUrl,
+          video_url: videoUrl || null,
         })
         .select()
         .single();

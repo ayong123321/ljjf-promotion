@@ -34,6 +34,7 @@ interface Content {
   title: string;
   description: string | null;
   image_url: string | null;
+  video_url: string | null;
   is_active: boolean;
   created_at: string;
 }
@@ -77,6 +78,7 @@ export default function AdminPage() {
     id: '',
     title: '',
     description: '',
+    videoUrl: '',
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
 
@@ -156,6 +158,7 @@ export default function AdminPage() {
       const formData = new FormData();
       formData.append('title', contentForm.title);
       formData.append('description', contentForm.description);
+      formData.append('videoUrl', contentForm.videoUrl || '');
       if (contentForm.id) {
         formData.append('id', contentForm.id);
       }
@@ -170,7 +173,7 @@ export default function AdminPage() {
       const data = await res.json();
       if (data.data) {
         toast.success('推广内容保存成功');
-        setContentForm({ id: '', title: '', description: '' });
+        setContentForm({ id: '', title: '', description: '', videoUrl: '' });
         setImageFile(null);
         fetchData();
       } else {
@@ -713,6 +716,19 @@ export default function AdminPage() {
                       onChange={(e) => setImageFile(e.target.files?.[0] || null)}
                     />
                   </div>
+                  <div>
+                    <Label htmlFor="videoUrl">导航视频链接（可选）</Label>
+                    <Input
+                      id="videoUrl"
+                      type="url"
+                      placeholder="输入视频链接，如抖音、快手等分享链接"
+                      value={contentForm.videoUrl}
+                      onChange={(e) => setContentForm({ ...contentForm, videoUrl: e.target.value })}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      支持抖音、快手、微信视频号等平台的视频链接，不填则不显示
+                    </p>
+                  </div>
                   <div className="flex gap-2">
                     <Button type="submit" className="flex-1">
                       {contentForm.id ? '更新内容' : '创建内容'}
@@ -721,7 +737,7 @@ export default function AdminPage() {
                       <Button
                         type="button"
                         variant="outline"
-                        onClick={() => setContentForm({ id: '', title: '', description: '' })}
+                        onClick={() => setContentForm({ id: '', title: '', description: '', videoUrl: '' })}
                       >
                         取消
                       </Button>
@@ -755,6 +771,14 @@ export default function AdminPage() {
                               />
                             </div>
                           )}
+                          {content.video_url && (
+                            <div className="mt-2 text-sm text-green-600 flex items-center gap-1">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                              </svg>
+                              已添加导航视频
+                            </div>
+                          )}
                         </div>
                         <div className="flex gap-2 ml-2">
                           <Button
@@ -765,6 +789,7 @@ export default function AdminPage() {
                                 id: content.id.toString(),
                                 title: content.title,
                                 description: content.description || '',
+                                videoUrl: content.video_url || '',
                               });
                             }}
                           >
