@@ -7,22 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Send, CheckCircle, MapPin, Phone, Copy, Play, ExternalLink } from 'lucide-react';
-
-// 判断是否是可播放的视频URL（mp4等直接可播放的格式）
-const isPlayableVideoUrl = (url: string): boolean => {
-  if (!url) return false;
-  const lowerUrl = url.toLowerCase();
-  const videoPatterns = ['.mp4', '.webm', '.ogg', '.mov', '.m4v', '/videos/'];
-  return videoPatterns.some(pattern => lowerUrl.includes(pattern));
-};
-
-// 判断是否是抖音链接
-const isDouyinUrl = (url: string): boolean => {
-  if (!url) return false;
-  const lowerUrl = url.toLowerCase();
-  return lowerUrl.includes('douyin.com');
-};
+import { Send, CheckCircle, MapPin, Phone, Copy, Play } from 'lucide-react';
 
 export default function PromotionPage() {
   const params = useParams();
@@ -155,70 +140,35 @@ export default function PromotionPage() {
         )}
 
         {/* 导航视频 */}
-        {content.video_url && (() => {
-          // 直接使用视频URL，数据库中已经是干净的链接
-          const videoUrl = content.video_url.trim();
-          const isPlayable = isPlayableVideoUrl(videoUrl);
-          const isDouyin = isDouyinUrl(videoUrl);
-          
-          console.log('视频URL:', videoUrl, '是否抖音:', isDouyin);
-          
-          return (
-            <Card className="mb-6 overflow-hidden shadow-lg border-2 border-green-400">
-              <CardContent className="p-0">
-                {/* 视频区域 */}
-                <div className="p-4 bg-gradient-to-b from-green-50 to-white">
-                  {isPlayable ? (
-                    // 可播放视频 - 直接播放
-                    <video 
-                      src={videoUrl} 
-                      controls 
-                      controlsList="nodownload"
-                      className="w-full rounded-lg shadow-md"
-                      poster={content.image_url || undefined}
-                      playsInline
-                      preload="metadata"
-                    >
-                      <source src={videoUrl} type="video/mp4" />
-                      您的浏览器不支持视频播放
-                    </video>
-                  ) : isDouyin ? (
-                    // 抖音链接 - 显示可点击的播放按钮
-                    <a 
-                      href={videoUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex flex-col items-center justify-center py-8 cursor-pointer"
-                    >
-                      <div className="relative mb-4">
-                        <div className="absolute inset-0 bg-gradient-to-r from-pink-500 to-red-500 rounded-full blur-xl opacity-50 animate-pulse"></div>
-                        <div className="relative w-24 h-24 bg-gradient-to-br from-pink-500 to-red-500 rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition-transform">
-                          <Play className="h-12 w-12 text-white ml-1" />
-                        </div>
-                      </div>
-                      <p className="text-gray-600 mb-4 text-center">点击观看抖音视频</p>
-                      <span className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-red-500 text-white rounded-full font-bold shadow-lg hover:from-pink-600 hover:to-red-600 transition-all transform hover:scale-105">
-                        点击知道门店地址
-                      </span>
-                    </a>
-                  ) : (
-                    // 其他链接 - 显示可点击的播放按钮
-                    <a 
-                      href={videoUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex flex-col items-center justify-center py-8 cursor-pointer"
-                    >
-                      <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center shadow-lg mb-4 hover:scale-110 transition-transform">
-                        <Play className="h-10 w-10 text-white" />
-                      </div>
-                      <p className="text-gray-600 mb-4 text-center">点击下方按钮观看视频</p>
-                      <span className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-full font-bold shadow-lg hover:from-green-600 hover:to-emerald-600 transition-all transform hover:scale-105">
-                        点击知道门店地址
-                      </span>
-                    </a>
-                  )}
+        {content.video_url && (
+          <Card className="mb-6 overflow-hidden shadow-lg border-2 border-green-400">
+            <CardContent className="p-0">
+              {/* 视频区域 */}
+              <div className="p-4 bg-gradient-to-b from-green-50 to-white">
+                {/* 抖音链接 - 显示可点击的播放按钮 */}
+                <a 
+                  href={content.video_url.trim()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex flex-col items-center justify-center py-8 cursor-pointer block"
+                >
+                  <div className="relative mb-4">
+                    <div className="absolute inset-0 bg-gradient-to-r from-pink-500 to-red-500 rounded-full blur-xl opacity-50 animate-pulse"></div>
+                    <div className="relative w-24 h-24 bg-gradient-to-br from-pink-500 to-red-500 rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition-transform">
+                      <Play className="h-12 w-12 text-white ml-1" />
+                    </div>
+                  </div>
+                  <p className="text-gray-600 mb-4 text-center font-medium">点击观看抖音视频</p>
+                  <span className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-pink-500 to-red-500 text-white rounded-full font-bold text-lg shadow-lg hover:from-pink-600 hover:to-red-600 transition-all transform hover:scale-105">
+                    点击知道门店地址
+                  </span>
+                </a>
+                {/* 显示实际链接，方便用户复制 */}
+                <div className="mt-4 p-3 bg-gray-100 rounded-lg text-center">
+                  <p className="text-xs text-gray-500 mb-1">视频链接（可长按复制）：</p>
+                  <p className="text-sm text-blue-600 break-all select-all">{content.video_url.trim()}</p>
                 </div>
+              </div>
                 {/* 动态标题 - 在视频下方 */}
                 <div className="relative bg-gradient-to-r from-green-500 to-emerald-500 py-4 px-4 overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-400 animate-pulse opacity-50"></div>
@@ -238,8 +188,7 @@ export default function PromotionPage() {
                 </div>
               </CardContent>
             </Card>
-          );
-        })()}
+        )}
 
         {/* 门店信息 */}
         <Card className="mb-6 shadow-lg bg-gradient-to-r from-orange-50 to-pink-50 border-orange-200">
