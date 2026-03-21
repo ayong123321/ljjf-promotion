@@ -821,11 +821,16 @@ export default function AdminPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {contents.map((content) => (
-                    <div key={content.id} className="p-3 border rounded-lg">
+                  {contents.map((content, index) => (
+                    <div key={content.id} className={`p-3 border rounded-lg ${index === 0 ? 'border-green-500 bg-green-50' : ''}`}>
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <div className="font-medium">{content.title}</div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{content.title}</span>
+                            {index === 0 && (
+                              <span className="text-xs bg-green-500 text-white px-2 py-0.5 rounded">当前使用中</span>
+                            )}
+                          </div>
                           {content.description && (
                             <div className="text-sm text-gray-500 mt-1">{content.description}</div>
                           )}

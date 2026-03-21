@@ -9,19 +9,20 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Send, CheckCircle, MapPin, Phone, Copy, Play, ExternalLink } from 'lucide-react';
 
-// 判断是否是可播放的视频URL
+// 判断是否是可播放的视频URL（mp4等直接可播放的格式）
 const isPlayableVideoUrl = (url: string): boolean => {
   if (!url) return false;
   const lowerUrl = url.toLowerCase();
-  // 排除抖音、快手等短链接
+  // 排除抖音、快手等短链接（这些需要跳转才能看）
   if (lowerUrl.includes('douyin.com') || 
+      lowerUrl.includes('v.douyin.com') ||
       lowerUrl.includes('kuaishou.com') ||
       lowerUrl.includes('tiktok.com')) {
     return false;
   }
-  // 可播放的视频格式（URL中包含这些扩展名）
-  const playablePatterns = ['.mp4', '.webm', '.ogg', '.mov', '.m4v', 'video/'];
-  return playablePatterns.some(pattern => lowerUrl.includes(pattern));
+  // 检查是否是视频文件URL（包含视频扩展名）
+  const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.m4v', '.avi', '.mkv'];
+  return videoExtensions.some(ext => lowerUrl.includes(ext));
 };
 
 // 判断是否是抖音链接
@@ -164,10 +165,14 @@ export default function PromotionPage() {
 
         {/* 导航视频 - 支持抖音链接和普通视频 */}
         {content.video_url && (() => {
-          // 从文本中提取URL
+          // 从文本中提取URL（处理抖音分享文字）
           const videoUrl = extractUrl(content.video_url) || content.video_url;
           const isDouyin = isDouyinUrl(videoUrl);
           const isPlayable = isPlayableVideoUrl(videoUrl);
+          
+          console.log('视频URL:', videoUrl);
+          console.log('是否抖音链接:', isDouyin);
+          console.log('是否可播放:', isPlayable);
           
           return (
             <Card className="mb-6 overflow-hidden shadow-lg border-2 border-green-400">
@@ -179,10 +184,15 @@ export default function PromotionPage() {
                     <video 
                       src={videoUrl} 
                       controls 
+                      controlsList="nodownload"
                       className="w-full rounded-lg shadow-md"
                       poster={content.image_url || undefined}
                       playsInline
+                      preload="metadata"
+                      onError={(e) => console.error('视频加载错误:', e)}
+                      onLoadedData={() => console.log('视频加载成功')}
                     >
+                      <source src={videoUrl} type="video/mp4" />
                       您的浏览器不支持视频播放
                     </video>
                   ) : isDouyin ? (
