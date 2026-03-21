@@ -2,6 +2,29 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 import { S3Storage } from 'coze-coding-dev-sdk';
 
+// 从文本中提取URL（处理抖音分享文字）
+const extractUrl = (text: string): string | null => {
+  if (!text) return null;
+  
+  // 先尝试匹配抖音短链接
+  const douyinMatch = text.match(/https?:\/\/v\.douyin\.com\/[a-zA-Z0-9]+\/?/);
+  if (douyinMatch) {
+    return douyinMatch[0];
+  }
+  
+  // 再尝试匹配其他抖音链接
+  const douyinMatch2 = text.match(/https?:\/\/[^\s]*?douyin\.com\/[^\s]*/);
+  if (douyinMatch2) {
+    let url = douyinMatch2[0];
+    url = url.replace(/[^\w\/]$/, '');
+    return url;
+  }
+  
+  // 最后匹配通用的 http/https URL
+  const urlMatch = text.match(/https?:\/\/[a-zA-Z0-9\-._~:/?#[\]@!$&'()*+,;=%]+/);
+  return urlMatch ? urlMatch[0] : null;
+};
+
 // 初始化对象存储
 const storage = new S3Storage({
   endpointUrl: process.env.COZE_BUCKET_ENDPOINT_URL,
@@ -154,10 +177,15 @@ export async function POST(request: NextRequest) {
         }, { status: 500 });
       }
     } else if (videoUrlInput && videoUrlInput.trim()) {
-      // 如果没有上传视频但有链接，使用链接
-      videoUrl = videoUrlInput.trim();
-      hasNewVideo = true;
-      console.log('使用视频链接:', videoUrl);
+      // 如果没有上传视频但有链接，提取URL并使用
+      const extractedUrl = extractUrl(videoUrlInput.trim());
+      if (extractedUrl) {
+        videoUrl = extractedUrl;
+        hasNewVideo = true;
+        console.log('从分享文字中提取视频链接:', videoUrl);
+      } else {
+        console.log('无法从输入中提取有效URL:', videoUrlInput);
+      }
     }
 
     const client = getSupabaseClient();

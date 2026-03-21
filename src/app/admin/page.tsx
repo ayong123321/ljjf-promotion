@@ -824,7 +824,7 @@ export default function AdminPage() {
                   </div>
                   <div className="border-t pt-4 mt-4">
                     <Label className="text-base font-semibold">导航视频（可选）</Label>
-                    <p className="text-xs text-gray-500 mb-3">上传视频文件或粘贴视频链接，二选一即可</p>
+                    <p className="text-xs text-gray-500 mb-3">上传视频文件或粘贴抖音分享链接，二选一即可。可直接粘贴抖音分享的全部文字，系统会自动提取链接。</p>
                     
                     <div className="space-y-3">
                       <div>
@@ -851,11 +851,11 @@ export default function AdminPage() {
                       <div className="text-center text-gray-400 text-sm">或者</div>
                       
                       <div>
-                        <Label htmlFor="videoUrl" className="text-sm">粘贴视频链接</Label>
+                        <Label htmlFor="videoUrl" className="text-sm">粘贴抖音分享链接</Label>
                         <Input
                           id="videoUrl"
                           type="text"
-                          placeholder="粘贴抖音、快手等分享链接"
+                          placeholder="可直接粘贴抖音分享的全部文字"
                           value={contentForm.videoUrl}
                           onChange={(e) => {
                             setContentForm({ ...contentForm, videoUrl: e.target.value });

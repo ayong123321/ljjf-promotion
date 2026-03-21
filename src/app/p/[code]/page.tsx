@@ -25,11 +25,28 @@ const isDouyinUrl = (url: string): boolean => {
   return lowerUrl.includes('douyin.com') || lowerUrl.includes('v.douyin.com');
 };
 
-// 从文本中提取URL
+// 从文本中提取URL（更精确的匹配，避免匹配到后面的乱码）
 const extractUrl = (text: string): string | null => {
   if (!text) return null;
-  // 匹配 http:// 或 https:// 开头的URL
-  const urlMatch = text.match(/https?:\/\/[^\s<>"{}|\\^`\[\]]+/);
+  
+  // 先尝试匹配抖音短链接（最常见的情况）
+  const douyinMatch = text.match(/https?:\/\/v\.douyin\.com\/[a-zA-Z0-9]+\/?/);
+  if (douyinMatch) {
+    return douyinMatch[0];
+  }
+  
+  // 再尝试匹配其他抖音链接
+  const douyinMatch2 = text.match(/https?:\/\/[^\s]*?douyin\.com\/[^\s]*/);
+  if (douyinMatch2) {
+    // 清理尾部可能的非URL字符
+    let url = douyinMatch2[0];
+    // 移除末尾的非字母数字字符（除了斜杠）
+    url = url.replace(/[^\w\/]$/, '');
+    return url;
+  }
+  
+  // 最后匹配通用的 http/https URL
+  const urlMatch = text.match(/https?:\/\/[a-zA-Z0-9\-._~:/?#[\]@!$&'()*+,;=%]+/);
   return urlMatch ? urlMatch[0] : null;
 };
 
