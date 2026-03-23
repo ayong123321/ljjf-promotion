@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseClient } from '@/storage/database/supabase-client';
+import { createClient } from '@supabase/supabase-js';
+
+function getSupabaseClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) throw new Error('Supabase 环境变量未配置');
+  return createClient(url, key);
+}
 
 export async function GET(
   request: NextRequest,
@@ -18,35 +25,42 @@ export async function GET(
     const { data: promoter, error: promoterError } = await client
       .from('promoters')
       .select('*')
-      .eq('unique_code', code)
-      .eq('is_active', true)
+      .eq('code', code)
       .single();
 
     if (promoterError || !promoter) {
-      return NextResponse.json({ error: '推广者不存在或已禁用' }, { status: 404 });
+      return NextResponse.json({ error: '推广者不存在' }, { status: 404 });
     }
 
-    // 获取推广者的统计数据
+    // 获取访客记录
     const { data: visitorRecords } = await client
       .from('visitor_records')
       .select('*')
-      .eq('promoter_id', promoter.id)
+      .eq('promoter_code', code)
       .order('created_at', { ascending: false })
       .limit(100);
 
-    const uniqueVisitors = new Set(visitorRecords?.map(v => v.ip_address)).size;
+    const uniqueVisitors = new Set(visitorRecords?.map(v => v.ip)).size;
     const totalVisits = visitorRecords?.length || 0;
-    const wechatSubmissions = visitorRecords?.filter(v => v.wechat_id).length || 0;
+    const wechatSubmissions = visitorRecords?.filter(v => v.wechat).length || 0;
 
-    // 获取激活的推广内容（按创建时间倒序取第一条）
+    // 获取推广内容
     const { data: contents } = await client
       .from('promotion_contents')
       .select('*')
-      .eq('is_active', true)
       .order('created_at', { ascending: false })
       .limit(1);
     
     const content = contents?.[0] || null;
+
+    // 格式化内容
+    const formattedContent = content ? {
+      title: content.title,
+      description: content.description,
+      image_url: content.type === 'image' ? content.url : null,
+      video_url: content.type === 'video' ? content.url : null,
+      store_image_url: null
+    } : null;
 
     return NextResponse.json({
       data: {
@@ -57,7 +71,7 @@ export async function GET(
           wechatSubmissions,
         },
         visitorRecords: visitorRecords || [],
-        content,
+        content: formattedContent,
       }
     });
   } catch (error) {

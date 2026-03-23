@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseClient } from '@/storage/database/supabase-client';
+import { createClient } from '@supabase/supabase-js';
+
+function getSupabaseClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) throw new Error('Supabase 环境变量未配置');
+  return createClient(url, key);
+}
 
 // 记录访客访问
 export async function POST(request: NextRequest) {
@@ -17,29 +24,26 @@ export async function POST(request: NextRequest) {
     const { data: promoter, error: promoterError } = await client
       .from('promoters')
       .select('*')
-      .eq('unique_code', promoterCode)
-      .eq('is_active', true)
+      .eq('code', promoterCode)
       .single();
 
     if (promoterError || !promoter) {
-      return NextResponse.json({ error: '推广者不存在或已禁用' }, { status: 404 });
+      return NextResponse.json({ error: '推广者不存在' }, { status: 404 });
     }
 
     // 获取访客信息
     const forwarded = request.headers.get('x-forwarded-for');
     const ipAddress = forwarded ? forwarded.split(',')[0] : request.headers.get('x-real-ip') || 'unknown';
     const userAgent = request.headers.get('user-agent') || '';
-    const referrer = request.headers.get('referer') || '';
 
     // 插入访客记录
     const { data, error } = await client
       .from('visitor_records')
       .insert({
-        promoter_id: promoter.id,
-        wechat_id: wechatId || null,
-        ip_address: ipAddress,
+        promoter_code: promoterCode,
+        wechat: wechatId || null,
+        ip: ipAddress,
         user_agent: userAgent,
-        referrer: referrer,
       })
       .select()
       .single();
@@ -68,7 +72,7 @@ export async function PUT(request: NextRequest) {
     const client = getSupabaseClient();
     const { data, error } = await client
       .from('visitor_records')
-      .update({ wechat_id: wechatId })
+      .update({ wechat: wechatId })
       .eq('id', recordId)
       .select()
       .single();

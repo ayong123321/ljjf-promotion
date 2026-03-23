@@ -1,79 +1,43 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseClient } from '@/storage/database/supabase-client';
+import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
-// 获取统计数据
-export async function GET(request: NextRequest) {
+function getSupabaseClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) throw new Error('Supabase 环境变量未配置');
+  return createClient(url, key);
+}
+
+export async function GET() {
   try {
-    const { searchParams } = new URL(request.url);
-    const promoterId = searchParams.get('promoterId');
-
     const client = getSupabaseClient();
-
-    if (promoterId) {
-      // 获取特定推广者的统计数据
-      const { data: visitorRecords, error: visitorError } = await client
-        .from('visitor_records')
-        .select('*')
-        .eq('promoter_id', parseInt(promoterId))
-        .order('created_at', { ascending: false });
-
-      if (visitorError) {
-        return NextResponse.json({ error: visitorError.message }, { status: 500 });
-      }
-
-      // 统计访客数量
-      const uniqueVisitors = new Set(visitorRecords?.map(v => v.ip_address)).size;
-      const totalVisits = visitorRecords?.length || 0;
-      const wechatSubmissions = visitorRecords?.filter(v => v.wechat_id).length || 0;
-
-      return NextResponse.json({
-        data: {
-          visitorRecords,
-          stats: {
-            uniqueVisitors,
-            totalVisits,
-            wechatSubmissions,
-          }
-        }
-      });
-    } else {
-      // 获取所有推广者的统计数据
-      const { data: promoters, error: promotersError } = await client
-        .from('promoters')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (promotersError) {
-        return NextResponse.json({ error: promotersError.message }, { status: 500 });
-      }
-
-      // 获取每个推广者的统计数据
-      const promotersWithStats = await Promise.all(
-        (promoters || []).map(async (promoter) => {
-          const { data: visitorRecords } = await client
-            .from('visitor_records')
-            .select('*')
-            .eq('promoter_id', promoter.id);
-
-          const uniqueVisitors = new Set(visitorRecords?.map(v => v.ip_address)).size;
-          const totalVisits = visitorRecords?.length || 0;
-          const wechatSubmissions = visitorRecords?.filter(v => v.wechat_id).length || 0;
-
-          return {
-            ...promoter,
-            stats: {
-              uniqueVisitors,
-              totalVisits,
-              wechatSubmissions,
-            }
-          };
-        })
-      );
-
-      return NextResponse.json({ data: promotersWithStats });
+    
+    // 获取所有访客记录
+    const { data: visitors, error } = await client
+      .from('visitor_records')
+      .select('*');
+    
+    if (error) {
+      return NextResponse.json({ success: false, error: error.message });
     }
+    
+    // 计算统计数据
+    const totalVisitors = visitors?.length || 0;
+    const uniqueVisitors = new Set(visitors?.map(v => v.ip)).size;
+    const wechatSubmissions = visitors?.filter(v => v.wechat).length || 0;
+    
+    return NextResponse.json({
+      success: true,
+      data: {
+        totalVisitors,
+        uniqueVisitors,
+        wechatSubmissions
+      }
+    });
   } catch (error) {
-    console.error('获取统计数据失败:', error);
-    return NextResponse.json({ error: '获取统计数据失败' }, { status: 500 });
+    return NextResponse.json({ 
+      success: false, 
+      error: error instanceof Error ? error.message : '获取失败' 
+    });
   }
 }
