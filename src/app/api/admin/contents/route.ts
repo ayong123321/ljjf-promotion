@@ -12,22 +12,12 @@ function getSupabaseClient() {
   return createClient(url, key);
 }
 
-// 生成唯一推广码
-function generateCode(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let code = '';
-  for (let i = 0; i < 6; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return code;
-}
-
-// GET - 获取推广者列表
+// GET - 获取内容列表
 export async function GET() {
   try {
     const client = getSupabaseClient();
     const { data, error } = await client
-      .from('promoters')
+      .from('promotion_contents')
       .select('*')
       .order('created_at', { ascending: false });
 
@@ -44,41 +34,32 @@ export async function GET() {
   }
 }
 
-// POST - 添加推广者
+// POST - 添加内容
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, phone } = body;
+    const { type, title, description, url } = body;
 
-    if (!name || !name.trim()) {
-      return NextResponse.json({ success: false, error: '姓名不能为空' });
+    if (!title || !title.trim()) {
+      return NextResponse.json({ success: false, error: '标题不能为空' });
+    }
+
+    if (!url || !url.trim()) {
+      return NextResponse.json({ success: false, error: '链接地址不能为空' });
+    }
+
+    if (!['image', 'video'].includes(type)) {
+      return NextResponse.json({ success: false, error: '类型必须是 image 或 video' });
     }
 
     const client = getSupabaseClient();
-    
-    // 生成唯一推广码
-    let code = generateCode();
-    let attempts = 0;
-    
-    // 确保推广码唯一
-    while (attempts < 10) {
-      const { data: existing } = await client
-        .from('promoters')
-        .select('code')
-        .eq('code', code)
-        .single();
-      
-      if (!existing) break;
-      code = generateCode();
-      attempts++;
-    }
-
     const { data, error } = await client
-      .from('promoters')
+      .from('promotion_contents')
       .insert({
-        name: name.trim(),
-        phone: phone?.trim() || null,
-        code: code,
+        type,
+        title: title.trim(),
+        description: description?.trim() || null,
+        url: url.trim(),
       })
       .select()
       .single();
@@ -96,7 +77,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// DELETE - 删除推广者
+// DELETE - 删除内容
 export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -108,7 +89,7 @@ export async function DELETE(request: NextRequest) {
 
     const client = getSupabaseClient();
     const { error } = await client
-      .from('promoters')
+      .from('promotion_contents')
       .delete()
       .eq('id', id);
 
