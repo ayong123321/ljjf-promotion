@@ -68,16 +68,22 @@ export default function PromotionPage() {
       
       if (data.data) {
         setVisitorRecordId(data.data.id);
-        const promoterRes = await fetch(`/api/promoter/${code}`);
-        const promoterData = await promoterRes.json();
-        if (promoterData.data) {
-          setContent(promoterData.data.content);
-        }
       } else {
-        toast.error('页面加载失败');
+        console.error('创建访客记录失败:', data.error);
+        // 不阻止页面加载，允许用户继续操作
+      }
+      
+      // 无论是否创建访客记录，都加载内容
+      const promoterRes = await fetch(`/api/promoter/${code}`);
+      const promoterData = await promoterRes.json();
+      if (promoterData.data) {
+        setContent(promoterData.data.content);
+      } else {
+        console.error('加载内容失败:', promoterData.error);
       }
     } catch (error) {
-      toast.error('页面加载失败');
+      console.error('页面加载失败:', error);
+      toast.error('页面加载遇到问题，但您仍可提交联系方式');
     } finally {
       setLoading(false);
     }

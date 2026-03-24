@@ -1,11 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
+// 禁用缓存
+export const dynamic = 'force-dynamic';
+
 function getSupabaseClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const url = process.env.COZE_SUPABASE_URL;
+  const key = process.env.COZE_SUPABASE_ANON_KEY;
   if (!url || !key) throw new Error('Supabase 环境变量未配置');
   return createClient(url, key);
+}
+
+// 将数据库状态映射为前端状态
+function mapStatus(dbStatus: string | null): string {
+  if (!dbStatus || dbStatus === '未成交') return 'pending';
+  if (dbStatus === '已添加') return 'added';
+  if (dbStatus === '已成交') return 'dealed';
+  return dbStatus;
 }
 
 export async function GET(
@@ -20,7 +31,7 @@ export async function GET(
     const { data: promoter } = await client
       .from('promoters')
       .select('id')
-      .eq('code', code)
+      .eq('unique_code', code)
       .single();
     
     if (!promoter) {
@@ -45,7 +56,7 @@ export async function GET(
       hasWechat: !!v.wechat_id,
       wechatMasked: v.wechat_id ? `${v.wechat_id.substring(0, 2)}***${v.wechat_id.substring(v.wechat_id.length - 2)}` : null,
       ip: v.ip_address,
-      status: v.deal_status || 'pending',
+      status: mapStatus(v.deal_status),
       created_at: v.created_at
     }));
     

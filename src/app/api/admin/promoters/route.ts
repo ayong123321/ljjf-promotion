@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
 function getSupabaseClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const url = process.env.COZE_SUPABASE_URL;
+  const key = process.env.COZE_SUPABASE_ANON_KEY;
   
   if (!url || !key) {
     throw new Error('Supabase 环境变量未配置');
@@ -64,8 +64,8 @@ export async function POST(request: NextRequest) {
     while (attempts < 10) {
       const { data: existing } = await client
         .from('promoters')
-        .select('code')
-        .eq('code', code)
+        .select('unique_code')
+        .eq('unique_code', code)
         .single();
       
       if (!existing) break;
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
       .insert({
         name: name.trim(),
         phone: phone?.trim() || null,
-        code: code,
+        unique_code: code,
         is_active: true
       })
       .select()
