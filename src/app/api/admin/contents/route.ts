@@ -25,7 +25,30 @@ export async function GET() {
       return NextResponse.json({ success: false, error: error.message });
     }
 
-    return NextResponse.json({ success: true, data });
+    // 映射字段：将 image_url/video_url 映射为 type 和 url
+    const mappedData = (data || []).map(item => {
+      let type: 'image' | 'video' = 'image';
+      let url = '';
+      
+      if (item.video_url) {
+        type = 'video';
+        url = item.video_url;
+      } else if (item.image_url) {
+        type = 'image';
+        url = item.image_url;
+      } else if (item.store_image_url) {
+        type = 'image';
+        url = item.store_image_url;
+      }
+      
+      return {
+        ...item,
+        type,
+        url
+      };
+    });
+
+    return NextResponse.json({ success: true, data: mappedData });
   } catch (error) {
     return NextResponse.json({ 
       success: false, 
@@ -53,14 +76,23 @@ export async function POST(request: NextRequest) {
     }
 
     const client = getSupabaseClient();
+    
+    // 根据类型存储到不同字段
+    const insertData: Record<string, unknown> = {
+      title: title.trim(),
+      description: description?.trim() || null,
+      is_active: true
+    };
+    
+    if (type === 'image') {
+      insertData.image_url = url.trim();
+    } else {
+      insertData.video_url = url.trim();
+    }
+    
     const { data, error } = await client
       .from('promotion_contents')
-      .insert({
-        type,
-        title: title.trim(),
-        description: description?.trim() || null,
-        url: url.trim(),
-      })
+      .insert(insertData)
       .select()
       .single();
 
@@ -68,7 +100,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: error.message });
     }
 
-    return NextResponse.json({ success: true, data });
+    // 返回映射后的数据
+    return NextResponse.json({ 
+      success: true, 
+      data: {
+        ...data,
+        type,
+        url
+      }
+    });
   } catch (error) {
     return NextResponse.json({ 
       success: false, 

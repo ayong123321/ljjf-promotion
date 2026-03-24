@@ -69,17 +69,17 @@ export async function GET(
       .select('*')
       .order('created_at', { ascending: false });
     
-    // 分类内容
-    const images = contents?.filter(c => c.type === 'image').map(c => ({
+    // 分类内容 - 根据 image_url 和 video_url 判断类型
+    const images = contents?.filter(c => c.image_url || c.store_image_url).map(c => ({
       title: c.title,
       description: c.description,
-      url: c.url
+      url: c.image_url || c.store_image_url
     })) || [];
     
-    const videos = contents?.filter(c => c.type === 'video').map(c => ({
+    const videos = contents?.filter(c => c.video_url).map(c => ({
       title: c.title,
       description: c.description,
-      url: c.url
+      url: c.video_url
     })) || [];
     
     const content = {
