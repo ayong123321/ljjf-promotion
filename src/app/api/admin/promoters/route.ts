@@ -35,7 +35,13 @@ export async function GET() {
       return NextResponse.json({ success: false, error: error.message });
     }
 
-    return NextResponse.json({ success: true, data });
+    // 映射字段名，将 unique_code 映射为 code
+    const mappedData = (data || []).map(p => ({
+      ...p,
+      code: p.unique_code
+    }));
+
+    return NextResponse.json({ success: true, data: mappedData });
   } catch (error) {
     return NextResponse.json({ 
       success: false, 
@@ -88,7 +94,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: error.message });
     }
 
-    return NextResponse.json({ success: true, data });
+    // 映射字段名
+    const mappedData = {
+      ...data,
+      code: data?.unique_code || code
+    };
+
+    return NextResponse.json({ success: true, data: mappedData });
   } catch (error) {
     return NextResponse.json({ 
       success: false, 
