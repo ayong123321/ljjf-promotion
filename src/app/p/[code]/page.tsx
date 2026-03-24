@@ -36,6 +36,12 @@ const extractDouyinUrl = (text: string): string => {
   return text.trim();
 };
 
+// 判断是否是抖音链接
+const isDouyinUrl = (url: string): boolean => {
+  if (!url) return false;
+  return url.includes('douyin.com') || url.includes('v.douyin.com');
+};
+
 export default function PromotionPage() {
   const params = useParams();
   const code = params.code as string;
@@ -251,6 +257,34 @@ export default function PromotionPage() {
             </div>
             <CardContent className="p-0">
               {content.videos.map((video, index) => {
+                const isDouyin = isDouyinUrl(video.url);
+                
+                // 本地上传的视频 - 直接播放
+                if (!isDouyin) {
+                  return (
+                    <div key={index} className="p-4 bg-gradient-to-b from-green-50 to-white border-b last:border-b-0">
+                      <div className="w-full rounded-lg overflow-hidden bg-black">
+                        <video 
+                          src={video.url} 
+                          controls 
+                          className="w-full max-h-[60vh] object-contain"
+                          playsInline
+                          webkit-playsinline="true"
+                        >
+                          您的浏览器不支持视频播放
+                        </video>
+                      </div>
+                      {video.title && (
+                        <p className="text-gray-700 font-medium mt-3 text-center">{video.title}</p>
+                      )}
+                      {video.description && (
+                        <p className="text-gray-500 text-sm mt-1 text-center">{video.description}</p>
+                      )}
+                    </div>
+                  );
+                }
+                
+                // 抖音链接 - 显示跳转按钮
                 const videoUrl = extractDouyinUrl(video.url);
                 return (
                   <div key={index} className="p-4 bg-gradient-to-b from-green-50 to-white border-b last:border-b-0">
