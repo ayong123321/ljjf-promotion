@@ -106,43 +106,24 @@ export default function PromotionPage() {
 
     setSubmitting(true);
     try {
-      // 如果没有 visitorRecordId，先创建访客记录
-      let currentRecordId = visitorRecordId;
+      // 统一使用 PUT 请求，API 会根据情况更新或创建记录
+      const res = await fetch('/api/visitor', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recordId: visitorRecordId,
+          promoterCode: code,
+          wechatId: wechatId.trim(),
+        }),
+      });
+      const data = await res.json();
       
-      if (!currentRecordId) {
-        // 先创建访客记录
-        const createRes = await fetch('/api/visitor', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ promoterCode: code, wechatId: wechatId.trim() }),
-        });
-        const createData = await createRes.json();
-        
-        if (createData.data) {
-          setSubmitted(true);
-          toast.success('提交成功！我们会尽快联系您');
-          setVisitorRecordId(createData.data.id);
-        } else {
-          toast.error(createData.error || '提交失败，请重试');
-        }
+      if (data.data) {
+        setSubmitted(true);
+        toast.success('提交成功！我们会尽快联系您');
+        setVisitorRecordId(data.data.id);
       } else {
-        // 更新现有记录
-        const res = await fetch('/api/visitor', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            recordId: currentRecordId,
-            wechatId: wechatId.trim(),
-          }),
-        });
-        const data = await res.json();
-        
-        if (data.data) {
-          setSubmitted(true);
-          toast.success('提交成功！我们会尽快联系您');
-        } else {
-          toast.error(data.error || '提交失败，请重试');
-        }
+        toast.error(data.error || '提交失败，请重试');
       }
     } catch (error) {
       console.error('提交失败:', error);
