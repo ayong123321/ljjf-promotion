@@ -36,14 +36,14 @@ export async function POST(request: NextRequest) {
     const ipAddress = forwarded ? forwarded.split(',')[0] : request.headers.get('x-real-ip') || 'unknown';
     const userAgent = request.headers.get('user-agent') || '';
 
-    // 插入访客记录
+    // 插入访客记录（使用正确的字段名）
     const { data, error } = await client
       .from('visitor_records')
       .insert({
-        promoter_code: promoterCode,
-        wechat: wechatId || null,
-        ip: ipAddress,
-        user_agent: userAgent,
+        promoter_id: promoter.id,
+        wechat_id: wechatId || null,
+        ip_address: ipAddress,
+        user_agent: userAgent
       })
       .select()
       .single();
@@ -72,7 +72,7 @@ export async function PUT(request: NextRequest) {
     const client = getSupabaseClient();
     const { data, error } = await client
       .from('visitor_records')
-      .update({ wechat: wechatId })
+      .update({ wechat_id: wechatId })
       .eq('id', recordId)
       .select()
       .single();

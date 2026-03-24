@@ -79,6 +79,7 @@ export async function POST(request: NextRequest) {
         name: name.trim(),
         phone: phone?.trim() || null,
         code: code,
+        is_active: true
       })
       .select()
       .single();

@@ -20,17 +20,32 @@ interface Content {
   created_at: string;
 }
 
-interface VisitorStats {
-  totalVisitors: number;
-  uniqueVisitors: number;
+interface VisitorRecord {
+  id: number;
+  promoter_code: string;
+  promoters?: { name: string; code: string };
+  wechat: string;
+  ip: string;
+  status: string;
+  remark: string;
+  created_at: string;
+}
+
+interface PromoterStats {
+  code: string;
+  name: string;
+  totalVisits: number;
   wechatSubmissions: number;
+  addedCount: number;
+  dealedCount: number;
 }
 
 export default function AdminPage() {
-  const [activeTab, setActiveTab] = useState<'promoters' | 'contents' | 'visitors'>('promoters');
+  const [activeTab, setActiveTab] = useState<'promoters' | 'contents' | 'visitors' | 'visitorList'>('promoters');
   const [promoters, setPromoters] = useState<Promoter[]>([]);
   const [contents, setContents] = useState<Content[]>([]);
-  const [visitorStats, setVisitorStats] = useState<VisitorStats>({ totalVisitors: 0, uniqueVisitors: 0, wechatSubmissions: 0 });
+  const [promoterStats, setPromoterStats] = useState<PromoterStats[]>([]);
+  const [visitorRecords, setVisitorRecords] = useState<VisitorRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [newPromoter, setNewPromoter] = useState({ name: '', phone: '' });
   const [showAddPromoter, setShowAddPromoter] = useState(false);
@@ -39,17 +54,22 @@ export default function AdminPage() {
     title: '', 
     description: '', 
     url: '',
-    uploadType: 'file' as 'file' | 'link' // 上传方式
+    uploadType: 'file' as 'file' | 'link'
   });
   const [showAddContent, setShowAddContent] = useState(false);
   const [qrcodePromoter, setQrcodePromoter] = useState<Promoter | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // 筛选条件
+  const [filterPromoter, setFilterPromoter] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
 
   useEffect(() => {
     if (activeTab === 'promoters') fetchPromoters();
     else if (activeTab === 'contents') fetchContents();
-    else if (activeTab === 'visitors') fetchVisitorStats();
+    else if (activeTab === 'visitors') fetchPromoterStats();
+    else if (activeTab === 'visitorList') fetchVisitorRecords();
   }, [activeTab]);
 
   const fetchPromoters = async () => {
@@ -72,15 +92,38 @@ export default function AdminPage() {
     setLoading(false);
   };
 
-  const fetchVisitorStats = async () => {
+  const fetchPromoterStats = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/stats');
+      const res = await fetch('/api/admin/promoter-stats');
       const data = await res.json();
-      if (data.success) setVisitorStats(data.data);
+      if (data.success) setPromoterStats(data.data || []);
     } catch (e) { console.error(e); }
     setLoading(false);
   };
+
+  const fetchVisitorRecords = async () => {
+    setLoading(true);
+    try {
+      let url = '/api/admin/visitors';
+      const params = new URLSearchParams();
+      if (filterPromoter) params.append('promoter_code', filterPromoter);
+      if (filterStatus) params.append('status', filterStatus);
+      if (params.toString()) url += '?' + params.toString();
+      
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.success) setVisitorRecords(data.data || []);
+    } catch (e) { console.error(e); }
+    setLoading(false);
+  };
+
+  // 筛选变化时重新获取
+  useEffect(() => {
+    if (activeTab === 'visitorList') {
+      fetchVisitorRecords();
+    }
+  }, [filterPromoter, filterStatus]);
 
   const addPromoter = async () => {
     if (!newPromoter.name.trim()) { alert('请输入姓名'); return; }
@@ -100,7 +143,6 @@ export default function AdminPage() {
     } catch (e) { alert('添加失败'); }
   };
 
-  // 文件上传处理
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -127,7 +169,6 @@ export default function AdminPage() {
       alert('上传失败，请重试');
     } finally {
       setUploading(false);
-      // 清空文件选择
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -159,7 +200,6 @@ export default function AdminPage() {
     } catch (e) { alert('添加失败'); }
   };
 
-  // 复制到剪贴板（兼容手机）
   const copyToClipboard = async (text: string) => {
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -185,6 +225,24 @@ export default function AdminPage() {
       }
     } catch (e) {
       prompt('请手动复制链接：', text);
+    }
+  };
+
+  const updateVisitorStatus = async (id: number, status: string, remark?: string) => {
+    try {
+      const res = await fetch('/api/admin/visitors', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status, remark })
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchVisitorRecords();
+      } else {
+        alert('更新失败：' + data.error);
+      }
+    } catch (e) {
+      alert('更新失败');
     }
   };
 
@@ -219,6 +277,12 @@ export default function AdminPage() {
             className={`px-4 py-2 rounded text-sm md:text-base ${activeTab === 'visitors' ? 'bg-blue-500 text-white' : 'bg-white'}`}
           >
             数据统计
+          </button>
+          <button 
+            onClick={() => setActiveTab('visitorList')} 
+            className={`px-4 py-2 rounded text-sm md:text-base ${activeTab === 'visitorList' ? 'bg-blue-500 text-white' : 'bg-white'}`}
+          >
+            访客管理
           </button>
         </div>
 
@@ -338,6 +402,12 @@ export default function AdminPage() {
                               复制链接
                             </button>
                             <button 
+                              onClick={() => window.open(`/promoter-dashboard/${p.code}`, '_blank')}
+                              className="text-purple-500 hover:underline"
+                            >
+                              推广者后台
+                            </button>
+                            <button 
                               onClick={() => {
                                 if (confirm('确定删除？')) {
                                   fetch(`/api/admin/promoters?id=${p.id}`, { method: 'DELETE' })
@@ -385,7 +455,6 @@ export default function AdminPage() {
             
             {showAddContent && (
               <div className="mb-4 p-4 bg-gray-50 rounded">
-                {/* 类型选择 */}
                 <div className="mb-4">
                   <label className="block text-sm font-medium mb-2">内容类型</label>
                   <div className="flex gap-4">
@@ -412,7 +481,6 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* 上传方式选择 - 仅视频显示 */}
                 {newContent.type === 'video' && (
                   <div className="mb-4">
                     <label className="block text-sm font-medium mb-2">上传方式</label>
@@ -463,7 +531,6 @@ export default function AdminPage() {
                     />
                   </div>
                   
-                  {/* 文件上传 */}
                   {(newContent.type === 'image' || newContent.uploadType === 'file') && (
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium mb-1">
@@ -496,7 +563,6 @@ export default function AdminPage() {
                     </div>
                   )}
                   
-                  {/* 链接输入 - 仅视频 */}
                   {newContent.type === 'video' && newContent.uploadType === 'link' && (
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium mb-1">抖音分享链接 *</label>
@@ -576,26 +642,174 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* 数据统计 */}
+        {/* 数据统计 - 按推广者分组 */}
         {activeTab === 'visitors' && (
           <div className="bg-white p-4 md:p-6 rounded-lg shadow">
-            <h2 className="text-lg md:text-xl font-semibold mb-6">数据统计</h2>
+            <h2 className="text-lg md:text-xl font-semibold mb-6">推广者数据统计</h2>
             {loading ? (
               <p className="text-gray-500">加载中...</p>
+            ) : promoterStats.length === 0 ? (
+              <p className="text-gray-500">暂无数据</p>
             ) : (
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="bg-blue-50 p-6 rounded-lg text-center">
-                  <p className="text-3xl md:text-4xl font-bold text-blue-600">{visitorStats.totalVisitors}</p>
-                  <p className="text-gray-600 mt-2">总访问次数</p>
-                </div>
-                <div className="bg-green-50 p-6 rounded-lg text-center">
-                  <p className="text-3xl md:text-4xl font-bold text-green-600">{visitorStats.uniqueVisitors}</p>
-                  <p className="text-gray-600 mt-2">独立访客数</p>
-                </div>
-                <div className="bg-orange-50 p-6 rounded-lg text-center">
-                  <p className="text-3xl md:text-4xl font-bold text-orange-600">{visitorStats.wechatSubmissions}</p>
-                  <p className="text-gray-600 mt-2">留资人数</p>
-                </div>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[800px]">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left">推广者</th>
+                      <th className="px-4 py-3 text-left">推广码</th>
+                      <th className="px-4 py-3 text-center">访问次数</th>
+                      <th className="px-4 py-3 text-center">留微信数</th>
+                      <th className="px-4 py-3 text-center">已添加</th>
+                      <th className="px-4 py-3 text-center">已成交</th>
+                      <th className="px-4 py-3 text-center">转化率</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {promoterStats.map((p) => (
+                      <tr key={p.code} className="border-t hover:bg-gray-50">
+                        <td className="px-4 py-3 font-medium">{p.name}</td>
+                        <td className="px-4 py-3">
+                          <code className="bg-gray-100 px-2 py-1 rounded text-sm">{p.code}</code>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded font-medium">
+                            {p.totalVisits}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded font-medium">
+                            {p.wechatSubmissions}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded font-medium">
+                            {p.addedCount}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className="bg-green-100 text-green-700 px-2 py-1 rounded font-medium">
+                            {p.dealedCount}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className="text-gray-600">
+                            {p.wechatSubmissions > 0 ? Math.round((p.dealedCount / p.wechatSubmissions) * 100) : 0}%
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot className="bg-gray-100">
+                    <tr>
+                      <td className="px-4 py-3 font-bold" colSpan={2}>总计</td>
+                      <td className="px-4 py-3 text-center font-bold">
+                        {promoterStats.reduce((sum, p) => sum + p.totalVisits, 0)}
+                      </td>
+                      <td className="px-4 py-3 text-center font-bold">
+                        {promoterStats.reduce((sum, p) => sum + p.wechatSubmissions, 0)}
+                      </td>
+                      <td className="px-4 py-3 text-center font-bold">
+                        {promoterStats.reduce((sum, p) => sum + p.addedCount, 0)}
+                      </td>
+                      <td className="px-4 py-3 text-center font-bold">
+                        {promoterStats.reduce((sum, p) => sum + p.dealedCount, 0)}
+                      </td>
+                      <td className="px-4 py-3 text-center">-</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 访客管理 */}
+        {activeTab === 'visitorList' && (
+          <div className="bg-white p-4 md:p-6 rounded-lg shadow">
+            <div className="flex flex-wrap gap-4 mb-6 items-center justify-between">
+              <h2 className="text-lg md:text-xl font-semibold">访客列表</h2>
+              <div className="flex gap-2 flex-wrap">
+                <select 
+                  value={filterPromoter} 
+                  onChange={(e) => setFilterPromoter(e.target.value)}
+                  className="border rounded px-3 py-2"
+                >
+                  <option value="">全部推广者</option>
+                  {promoters.map(p => (
+                    <option key={p.code} value={p.code}>{p.name}</option>
+                  ))}
+                </select>
+                <select 
+                  value={filterStatus} 
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="border rounded px-3 py-2"
+                >
+                  <option value="">全部状态</option>
+                  <option value="pending">待处理</option>
+                  <option value="added">已添加</option>
+                  <option value="dealed">已成交</option>
+                </select>
+              </div>
+            </div>
+            
+            {loading ? (
+              <p className="text-gray-500">加载中...</p>
+            ) : visitorRecords.length === 0 ? (
+              <p className="text-gray-500">暂无访客记录</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left">推广者</th>
+                      <th className="px-4 py-3 text-left">微信/电话</th>
+                      <th className="px-4 py-3 text-left">状态</th>
+                      <th className="px-4 py-3 text-left">备注</th>
+                      <th className="px-4 py-3 text-left">时间</th>
+                      <th className="px-4 py-3 text-left">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {visitorRecords.map((v) => (
+                      <tr key={v.id} className="border-t">
+                        <td className="px-4 py-3">{v.promoters?.name || v.promoter_code}</td>
+                        <td className="px-4 py-3 font-medium">{v.wechat || '-'}</td>
+                        <td className="px-4 py-3">
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${
+                            v.status === 'dealed' ? 'bg-green-100 text-green-700' :
+                            v.status === 'added' ? 'bg-blue-100 text-blue-700' :
+                            'bg-gray-100 text-gray-600'
+                          }`}>
+                            {v.status === 'dealed' ? '已成交' : 
+                             v.status === 'added' ? '已添加' : '待处理'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-500">{v.remark || '-'}</td>
+                        <td className="px-4 py-3 text-sm text-gray-500">
+                          {new Date(v.created_at).toLocaleString()}
+                        </td>
+                        <td className="px-4 py-3">
+                          {v.wechat && (
+                            <div className="flex gap-1 flex-wrap">
+                              <button 
+                                onClick={() => updateVisitorStatus(v.id, 'added')}
+                                className={`text-xs px-2 py-1 rounded ${v.status === 'added' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+                              >
+                                添加
+                              </button>
+                              <button 
+                                onClick={() => updateVisitorStatus(v.id, 'dealed')}
+                                className={`text-xs px-2 py-1 rounded ${v.status === 'dealed' ? 'bg-green-500 text-white' : 'bg-gray-200'}`}
+                              >
+                                成交
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>
