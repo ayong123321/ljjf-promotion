@@ -9,6 +9,8 @@ const storage = new S3Storage({
   region: "cn-beijing",
 });
 
+export const maxDuration = 300; // 5分钟超时
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
@@ -48,12 +50,16 @@ export async function POST(request: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
+    console.log(`开始上传文件: ${fileName}, 大小: ${file.size} bytes`);
+
     // 上传到对象存储
     const key = await storage.uploadFile({
       fileContent: buffer,
       fileName: fileName,
       contentType: file.type,
     });
+
+    console.log(`文件上传成功, key: ${key}`);
 
     // 生成访问 URL（有效期 30 天）
     const url = await storage.generatePresignedUrl({
@@ -72,7 +78,7 @@ export async function POST(request: NextRequest) {
     console.error('文件上传失败:', error);
     return NextResponse.json({ 
       success: false, 
-      error: '上传失败，请重试' 
+      error: error instanceof Error ? error.message : '上传失败，请重试' 
     });
   }
 }

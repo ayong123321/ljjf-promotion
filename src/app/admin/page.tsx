@@ -147,16 +147,30 @@ export default function AdminPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // 检查文件大小
+    const maxSize = newContent.type === 'image' ? 10 * 1024 * 1024 : 100 * 1024 * 1024;
+    if (file.size > maxSize) {
+      alert(`文件太大，${newContent.type === 'image' ? '图片' : '视频'}最大支持 ${newContent.type === 'image' ? '10MB' : '100MB'}`);
+      return;
+    }
+
     setUploading(true);
     try {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('type', newContent.type);
 
+      // 创建 AbortController 用于超时控制
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5 * 60 * 1000); // 5分钟超时
+
       const res = await fetch('/api/admin/upload', {
         method: 'POST',
-        body: formData
+        body: formData,
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
       const data = await res.json();
       
       if (data.success) {
@@ -166,7 +180,11 @@ export default function AdminPage() {
         alert('上传失败：' + data.error);
       }
     } catch (e) {
-      alert('上传失败，请重试');
+      if (e instanceof Error && e.name === 'AbortError') {
+        alert('上传超时，请检查网络后重试');
+      } else {
+        alert('上传失败，请重试');
+      }
     } finally {
       setUploading(false);
       if (fileInputRef.current) {
@@ -727,7 +745,16 @@ export default function AdminPage() {
         {activeTab === 'visitorList' && (
           <div className="bg-white p-4 md:p-6 rounded-lg shadow">
             <div className="flex flex-wrap gap-4 mb-6 items-center justify-between">
-              <h2 className="text-lg md:text-xl font-semibold">访客列表</h2>
+              <div>
+                <h2 className="text-lg md:text-xl font-semibold">访客管理</h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  共 {visitorRecords.filter(v => v.wechat).length} 人留微信
+                  {visitorRecords.filter(v => v.wechat && v.status === 'added').length > 0 && 
+                    ` | 已添加 ${visitorRecords.filter(v => v.wechat && v.status === 'added').length} 人`}
+                  {visitorRecords.filter(v => v.wechat && v.status === 'dealed').length > 0 && 
+                    ` | 已成交 ${visitorRecords.filter(v => v.wechat && v.status === 'dealed').length} 人`}
+                </p>
+              </div>
               <div className="flex gap-2 flex-wrap">
                 <select 
                   value={filterPromoter} 
@@ -754,8 +781,11 @@ export default function AdminPage() {
             
             {loading ? (
               <p className="text-gray-500">加载中...</p>
-            ) : visitorRecords.length === 0 ? (
-              <p className="text-gray-500">暂无访客记录</p>
+            ) : visitorRecords.filter(v => v.wechat).length === 0 ? (
+              <div className="p-8 text-center">
+                <p className="text-gray-500 mb-2">暂无留微信的访客</p>
+                <p className="text-sm text-gray-400">访客在推广页面提交微信后会显示在这里</p>
+              </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
@@ -764,13 +794,12 @@ export default function AdminPage() {
                       <th className="px-4 py-3 text-left">推广者</th>
                       <th className="px-4 py-3 text-left">微信/电话</th>
                       <th className="px-4 py-3 text-left">状态</th>
-                      <th className="px-4 py-3 text-left">备注</th>
                       <th className="px-4 py-3 text-left">时间</th>
                       <th className="px-4 py-3 text-left">操作</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {visitorRecords.map((v) => (
+                    {visitorRecords.filter(v => v.wechat).map((v) => (
                       <tr key={v.id} className="border-t">
                         <td className="px-4 py-3">{v.promoters?.name || v.promoter_code}</td>
                         <td className="px-4 py-3 font-medium">{v.wechat || '-'}</td>
@@ -784,26 +813,43 @@ export default function AdminPage() {
                              v.status === 'added' ? '已添加' : '待处理'}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-500">{v.remark || '-'}</td>
                         <td className="px-4 py-3 text-sm text-gray-500">
                           {new Date(v.created_at).toLocaleString()}
                         </td>
                         <td className="px-4 py-3">
-                          {v.wechat && (
+                          {v.wechat ? (
                             <div className="flex gap-1 flex-wrap">
                               <button 
                                 onClick={() => updateVisitorStatus(v.id, 'added')}
-                                className={`text-xs px-2 py-1 rounded ${v.status === 'added' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+                                className={`text-xs px-3 py-1.5 rounded font-medium transition-colors ${
+                                  v.status === 'added' 
+                                    ? 'bg-blue-500 text-white' 
+                                    : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                                }`}
                               >
-                                添加
+                                已添加微信
                               </button>
                               <button 
                                 onClick={() => updateVisitorStatus(v.id, 'dealed')}
-                                className={`text-xs px-2 py-1 rounded ${v.status === 'dealed' ? 'bg-green-500 text-white' : 'bg-gray-200'}`}
+                                className={`text-xs px-3 py-1.5 rounded font-medium transition-colors ${
+                                  v.status === 'dealed' 
+                                    ? 'bg-green-500 text-white' 
+                                    : 'bg-green-100 text-green-700 hover:bg-green-200'
+                                }`}
                               >
-                                成交
+                                已成交
                               </button>
+                              {(v.status === 'added' || v.status === 'dealed') && (
+                                <button 
+                                  onClick={() => updateVisitorStatus(v.id, 'pending')}
+                                  className="text-xs px-3 py-1.5 rounded bg-gray-100 text-gray-600 hover:bg-gray-200 font-medium"
+                                >
+                                  重置
+                                </button>
+                              )}
                             </div>
+                          ) : (
+                            <span className="text-gray-400 text-xs">无微信</span>
                           )}
                         </td>
                       </tr>

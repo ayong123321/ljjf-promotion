@@ -16,6 +16,26 @@ const isWechat = () => {
   return ua.includes('micromessenger');
 };
 
+// 从抖音分享文本中提取链接
+const extractDouyinUrl = (text: string): string => {
+  if (!text) return '';
+  
+  // 尝试匹配 https://v.douyin.com/xxx 格式的链接
+  const douyinMatch = text.match(/https?:\/\/v\.douyin\.com\/[a-zA-Z0-9]+\/?/);
+  if (douyinMatch) {
+    return douyinMatch[0];
+  }
+  
+  // 尝试匹配其他抖音链接格式
+  const urlMatch = text.match(/https?:\/\/[^\s]+/);
+  if (urlMatch) {
+    return urlMatch[0];
+  }
+  
+  // 如果没有找到链接，返回原文
+  return text.trim();
+};
+
 export default function PromotionPage() {
   const params = useParams();
   const code = params.code as string;
@@ -195,42 +215,45 @@ export default function PromotionPage() {
               </h2>
             </div>
             <CardContent className="p-0">
-              {content.videos.map((video, index) => (
-                <div key={index} className="p-4 bg-gradient-to-b from-green-50 to-white border-b last:border-b-0">
-                  <button 
-                    onClick={() => {
-                      if (isWechat()) {
-                        setShowGuide(true);
-                      } else {
-                        window.location.href = video.url.trim();
-                      }
-                    }}
-                    className="w-full flex flex-col items-center justify-center py-6 cursor-pointer hover:bg-green-50/50 rounded-lg transition-colors"
-                  >
-                    <div className="relative mb-4">
-                      <div className="absolute inset-0 bg-gradient-to-r from-pink-500 to-red-500 rounded-full blur-xl opacity-40 animate-pulse"></div>
-                      <div className={`relative ${index === 0 ? 'w-24 h-24' : 'w-16 h-16'} bg-gradient-to-br from-pink-500 to-red-500 rounded-full flex items-center justify-center shadow-xl`}>
-                        <Play className={`${index === 0 ? 'h-12 w-12' : 'h-8 w-8'} text-white ml-1`} />
+              {content.videos.map((video, index) => {
+                const videoUrl = extractDouyinUrl(video.url);
+                return (
+                  <div key={index} className="p-4 bg-gradient-to-b from-green-50 to-white border-b last:border-b-0">
+                    <button 
+                      onClick={() => {
+                        if (isWechat()) {
+                          setShowGuide(true);
+                        } else if (videoUrl) {
+                          window.open(videoUrl, '_blank');
+                        }
+                      }}
+                      className="w-full flex flex-col items-center justify-center py-6 cursor-pointer hover:bg-green-50/50 rounded-lg transition-colors"
+                    >
+                      <div className="relative mb-4">
+                        <div className="absolute inset-0 bg-gradient-to-r from-pink-500 to-red-500 rounded-full blur-xl opacity-40 animate-pulse"></div>
+                        <div className={`relative ${index === 0 ? 'w-24 h-24' : 'w-16 h-16'} bg-gradient-to-br from-pink-500 to-red-500 rounded-full flex items-center justify-center shadow-xl`}>
+                          <Play className={`${index === 0 ? 'h-12 w-12' : 'h-8 w-8'} text-white ml-1`} />
+                        </div>
                       </div>
-                    </div>
-                    
-                    {index === 0 && (
-                      <p className="text-gray-600 mb-3 text-center font-medium">点击观看抖音视频</p>
-                    )}
-                    
-                    <span className={`inline-flex items-center gap-2 ${index === 0 ? 'px-8 py-4 text-lg' : 'px-6 py-3 text-base'} bg-gradient-to-r from-pink-500 to-red-500 text-white rounded-full font-bold shadow-lg hover:from-pink-600 hover:to-red-600 transition-all transform hover:scale-105`}>
-                      点击知道门店地址
-                    </span>
-                    
-                    {video.title && index > 0 && (
-                      <p className="text-gray-700 font-medium mt-3">{video.title}</p>
-                    )}
-                    {video.description && index > 0 && (
-                      <p className="text-gray-500 text-sm mt-1">{video.description}</p>
-                    )}
-                  </button>
-                </div>
-              ))}
+                      
+                      {index === 0 && (
+                        <p className="text-gray-600 mb-3 text-center font-medium">点击观看抖音视频</p>
+                      )}
+                      
+                      <span className={`inline-flex items-center gap-2 ${index === 0 ? 'px-8 py-4 text-lg' : 'px-6 py-3 text-base'} bg-gradient-to-r from-pink-500 to-red-500 text-white rounded-full font-bold shadow-lg hover:from-pink-600 hover:to-red-600 transition-all transform hover:scale-105`}>
+                        点击知道门店地址
+                      </span>
+                      
+                      {video.title && index > 0 && (
+                        <p className="text-gray-700 font-medium mt-3">{video.title}</p>
+                      )}
+                      {video.description && index > 0 && (
+                        <p className="text-gray-500 text-sm mt-1">{video.description}</p>
+                      )}
+                    </button>
+                  </div>
+                );
+              })}
             </CardContent>
           </Card>
         )}

@@ -6,10 +6,10 @@ import { useParams, useRouter } from 'next/navigation';
 interface VisitorRecord {
   id: number;
   promoter_code: string;
-  wechat: string;
+  hasWechat: boolean;
+  wechatMasked: string | null;
   ip: string;
   status: string;
-  remark: string;
   created_at: string;
 }
 
@@ -104,7 +104,7 @@ export default function PromoterDashboard() {
             onClick={() => setActiveTab('visitors')}
             className={`px-4 py-2 rounded ${activeTab === 'visitors' ? 'bg-pink-500 text-white' : 'bg-white'}`}
           >
-            访客记录 ({visitors.filter(v => v.wechat).length})
+            访客记录 ({visitors.filter(v => v.hasWechat).length})
           </button>
         </div>
 
@@ -137,7 +137,7 @@ export default function PromoterDashboard() {
         {/* 访客记录 */}
         {activeTab === 'visitors' && (
           <div className="bg-white rounded-lg shadow overflow-hidden">
-            {visitors.filter(v => v.wechat).length === 0 ? (
+            {visitors.filter(v => v.hasWechat).length === 0 ? (
               <div className="p-8 text-center text-gray-500">
                 暂无留微信的访客
               </div>
@@ -146,15 +146,15 @@ export default function PromoterDashboard() {
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-3 text-left text-sm">微信/电话</th>
+                      <th className="px-4 py-3 text-left text-sm">访客编号</th>
                       <th className="px-4 py-3 text-left text-sm">状态</th>
                       <th className="px-4 py-3 text-left text-sm">时间</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {visitors.filter(v => v.wechat).map((v) => (
+                    {visitors.filter(v => v.hasWechat).map((v, index) => (
                       <tr key={v.id} className="border-t">
-                        <td className="px-4 py-3 font-medium">{v.wechat}</td>
+                        <td className="px-4 py-3 font-medium">访客 #{index + 1}</td>
                         <td className="px-4 py-3">
                           <span className={`px-2 py-1 rounded text-xs ${
                             v.status === 'dealed' ? 'bg-green-100 text-green-700' :
@@ -180,8 +180,6 @@ export default function PromoterDashboard() {
         {/* 底部链接 */}
         <div className="mt-6 text-center">
           <a href="/" className="text-pink-500 hover:underline">返回首页</a>
-          <span className="mx-2 text-gray-300">|</span>
-          <a href="/admin" className="text-pink-500 hover:underline">管理后台</a>
         </div>
       </div>
     </div>

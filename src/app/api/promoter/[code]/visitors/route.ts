@@ -37,11 +37,13 @@ export async function GET(
       return NextResponse.json({ success: false, error: error.message });
     }
     
-    // 格式化数据
+    // 格式化数据 - 隐藏微信信息，只显示状态
     const result = (data || []).map(v => ({
       id: v.id,
       promoter_code: code,
-      wechat: v.wechat_id,
+      // 只显示微信的前2位和后2位，中间用***代替
+      hasWechat: !!v.wechat_id,
+      wechatMasked: v.wechat_id ? `${v.wechat_id.substring(0, 2)}***${v.wechat_id.substring(v.wechat_id.length - 2)}` : null,
       ip: v.ip_address,
       status: v.deal_status || 'pending',
       created_at: v.created_at
