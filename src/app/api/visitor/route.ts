@@ -8,19 +8,30 @@ function getSupabaseClient() {
   return createClient(url, key);
 }
 
-// 记录访客访问（幂等操作：同一推广者+同一IP只创建一条记录）
+// 获取客户端IP
+function getClientIp(request: NextRequest): string {
+  const forwarded = request.headers.get('x-forwarded-for');
+  if (forwarded) {
+    return forwarded.split(',')[0].trim();
+  }
+  return request.headers.get('x-real-ip') || 'unknown';
+}
+
+// 记录访客访问（幂等操作）
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { promoterCode, wechatId } = body;
 
-    console.log('收到访客请求:', { promoterCode, wechatId });
+    console.log('[POST] 收到访客请求:', { promoterCode, wechatId });
 
     if (!promoterCode) {
       return NextResponse.json({ error: '推广码不能为空' }, { status: 400 });
     }
 
     const client = getSupabaseClient();
+    const ipAddress = getClientIp(request);
+    const userAgent = request.headers.get('user-agent') || '';
 
     // 查询推广者
     const { data: promoter, error: promoterError } = await client
@@ -29,64 +40,35 @@ export async function POST(request: NextRequest) {
       .eq('unique_code', promoterCode)
       .maybeSingle();
 
-    if (promoterError) {
-      console.error('查询推广者失败:', promoterError);
-      return NextResponse.json({ error: '查询推广者失败' }, { status: 500 });
-    }
-
-    if (!promoter) {
-      console.error('推广者不存在:', promoterCode);
+    if (promoterError || !promoter) {
+      console.error('[POST] 推广者不存在:', promoterCode, promoterError);
       return NextResponse.json({ error: '推广者不存在' }, { status: 404 });
     }
     
-    const promoterId = (promoter as { id: number }).id;
+    const promoterId = (promoter as Record<string, unknown>).id;
 
-    // 获取访客信息
-    const forwarded = request.headers.get('x-forwarded-for');
-    const ipAddress = forwarded ? forwarded.split(',')[0].trim() : request.headers.get('x-real-ip') || 'unknown';
-    const userAgent = request.headers.get('user-agent') || '';
-
-    console.log('访客信息:', { promoterId, ipAddress, wechatId });
-
-    // 先检查该推广者下是否已有该IP的访客记录
-    const { data: existingRecord, error: searchError } = await client
+    // 先查询是否已有记录
+    const { data: existing, error: queryError } = await client
       .from('visitor_records')
       .select('*')
       .eq('promoter_id', promoterId)
       .eq('ip_address', ipAddress)
       .maybeSingle();
 
-    if (searchError) {
-      console.error('查询访客记录失败:', searchError);
-      return NextResponse.json({ error: '查询访客记录失败' }, { status: 500 });
+    if (queryError) {
+      console.error('[POST] 查询失败:', queryError);
+      return NextResponse.json({ error: '查询失败' }, { status: 500 });
     }
 
-    // 如果已有记录，更新并返回
-    if (existingRecord) {
-      console.log('找到已有访客记录:', existingRecord);
-      
-      // 如果提供了微信号且当前记录没有微信号，则更新
-      if (wechatId && !(existingRecord as Record<string, unknown>).wechat_id) {
-        const { data: updatedRecord, error: updateError } = await client
-          .from('visitor_records')
-          .update({ wechat_id: wechatId })
-          .eq('id', (existingRecord as Record<string, unknown>).id)
-          .select()
-          .single();
-
-        if (updateError) {
-          console.error('更新访客记录失败:', updateError);
-        } else {
-          return NextResponse.json({ data: updatedRecord });
-        }
-      }
-      
-      return NextResponse.json({ data: existingRecord });
+    // 有记录则返回
+    if (existing) {
+      console.log('[POST] 返回已有记录:', existing);
+      return NextResponse.json({ data: existing });
     }
 
-    // 没有记录则创建新记录
-    console.log('创建新访客记录');
-    const { data, error } = await client
+    // 无记录则创建
+    console.log('[POST] 创建新记录:', { promoterId, ipAddress, wechatId });
+    const { data: newRecord, error: insertError } = await client
       .from('visitor_records')
       .insert({
         promoter_id: promoterId,
@@ -97,36 +79,51 @@ export async function POST(request: NextRequest) {
       .select()
       .single();
 
-    if (error) {
-      console.error('插入访客记录失败:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (insertError) {
+      console.error('[POST] 创建失败:', insertError);
+      // 可能是并发创建导致的冲突，尝试再次查询
+      const { data: retryRecord } = await client
+        .from('visitor_records')
+        .select('*')
+        .eq('promoter_id', promoterId)
+        .eq('ip_address', ipAddress)
+        .maybeSingle();
+      
+      if (retryRecord) {
+        console.log('[POST] 重试查询成功:', retryRecord);
+        return NextResponse.json({ data: retryRecord });
+      }
+      
+      return NextResponse.json({ error: insertError.message }, { status: 500 });
     }
 
-    console.log('访客记录创建成功:', data);
-
-    return NextResponse.json({ data });
+    console.log('[POST] 创建成功:', newRecord);
+    return NextResponse.json({ data: newRecord });
   } catch (error) {
-    console.error('记录访客失败:', error);
+    console.error('[POST] 异常:', error);
     return NextResponse.json({ error: error instanceof Error ? error.message : '记录访客失败' }, { status: 500 });
   }
 }
 
-// 更新访客微信号（通过推广码和IP查找记录）
+// 更新或提交微信号（幂等操作）
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
     const { recordId, wechatId, promoterCode } = body;
 
-    console.log('收到更新请求:', { recordId, wechatId, promoterCode });
+    console.log('[PUT] 收到更新请求:', { recordId, wechatId, promoterCode });
 
     if (!wechatId) {
       return NextResponse.json({ error: '请输入微信号或手机号' }, { status: 400 });
     }
 
     const client = getSupabaseClient();
+    const ipAddress = getClientIp(request);
+    const userAgent = request.headers.get('user-agent') || '';
 
-    // 如果有 recordId，直接更新
+    // 优先使用 recordId 更新
     if (recordId) {
+      console.log('[PUT] 使用 recordId 更新:', recordId);
       const { data, error } = await client
         .from('visitor_records')
         .update({ wechat_id: wechatId })
@@ -135,15 +132,15 @@ export async function PUT(request: NextRequest) {
         .single();
 
       if (error) {
-        console.error('更新访客信息失败:', error);
+        console.error('[PUT] 更新失败:', error);
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
-      console.log('访客信息更新成功:', data);
+      console.log('[PUT] 更新成功:', data);
       return NextResponse.json({ data });
     }
 
-    // 如果没有 recordId 但有 promoterCode，通过推广者和IP查找
+    // 使用 promoterCode + IP 查找或创建
     if (promoterCode) {
       // 查询推广者
       const { data: promoter, error: promoterError } = await client
@@ -153,17 +150,15 @@ export async function PUT(request: NextRequest) {
         .maybeSingle();
 
       if (promoterError || !promoter) {
+        console.error('[PUT] 推广者不存在:', promoterCode);
         return NextResponse.json({ error: '推广者不存在' }, { status: 404 });
       }
 
       const promoterId = (promoter as Record<string, unknown>).id;
+      console.log('[PUT] 查找记录:', { promoterId, ipAddress });
 
-      // 获取IP
-      const forwarded = request.headers.get('x-forwarded-for');
-      const ipAddress = forwarded ? forwarded.split(',')[0].trim() : request.headers.get('x-real-ip') || 'unknown';
-
-      // 查找并更新
-      const { data, error } = await client
+      // 先尝试更新
+      const { data: updated, error: updateError } = await client
         .from('visitor_records')
         .update({ wechat_id: wechatId })
         .eq('promoter_id', promoterId)
@@ -171,40 +166,56 @@ export async function PUT(request: NextRequest) {
         .select()
         .maybeSingle();
 
-      if (error) {
-        console.error('更新访客信息失败:', error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+      if (updateError) {
+        console.error('[PUT] 更新出错:', updateError);
+        return NextResponse.json({ error: updateError.message }, { status: 500 });
       }
 
-      if (!data) {
-        // 没有找到记录，创建一条新记录
-        const userAgent = request.headers.get('user-agent') || '';
-        const { data: newRecord, error: insertError } = await client
+      // 更新成功
+      if (updated) {
+        console.log('[PUT] 更新成功:', updated);
+        return NextResponse.json({ data: updated });
+      }
+
+      // 没有找到记录，创建新记录
+      console.log('[PUT] 没找到记录，创建新记录');
+      const { data: newRecord, error: insertError } = await client
+        .from('visitor_records')
+        .insert({
+          promoter_id: promoterId,
+          wechat_id: wechatId,
+          ip_address: ipAddress,
+          user_agent: userAgent
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('[PUT] 创建失败:', insertError);
+        // 可能是并发创建，尝试再次更新
+        const { data: retryUpdate } = await client
           .from('visitor_records')
-          .insert({
-            promoter_id: promoterId,
-            wechat_id: wechatId,
-            ip_address: ipAddress,
-            user_agent: userAgent
-          })
+          .update({ wechat_id: wechatId })
+          .eq('promoter_id', promoterId)
+          .eq('ip_address', ipAddress)
           .select()
-          .single();
-
-        if (insertError) {
-          console.error('创建访客记录失败:', insertError);
-          return NextResponse.json({ error: insertError.message }, { status: 500 });
+          .maybeSingle();
+        
+        if (retryUpdate) {
+          console.log('[PUT] 重试更新成功:', retryUpdate);
+          return NextResponse.json({ data: retryUpdate });
         }
-
-        return NextResponse.json({ data: newRecord });
+        
+        return NextResponse.json({ error: insertError.message }, { status: 500 });
       }
 
-      console.log('访客信息更新成功:', data);
-      return NextResponse.json({ data });
+      console.log('[PUT] 创建成功:', newRecord);
+      return NextResponse.json({ data: newRecord });
     }
 
     return NextResponse.json({ error: '缺少必要参数' }, { status: 400 });
   } catch (error) {
-    console.error('更新访客信息失败:', error);
-    return NextResponse.json({ error: error instanceof Error ? error.message : '更新访客信息失败' }, { status: 500 });
+    console.error('[PUT] 异常:', error);
+    return NextResponse.json({ error: error instanceof Error ? error.message : '更新失败' }, { status: 500 });
   }
 }
