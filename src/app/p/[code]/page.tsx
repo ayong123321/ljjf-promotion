@@ -50,6 +50,7 @@ export default function PromotionPage() {
   const [visitorRecordId, setVisitorRecordId] = useState<number | null>(null);
   const [wechatId, setWechatId] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
 
   useEffect(() => {
@@ -85,29 +86,57 @@ export default function PromotionPage() {
   const handleSubmitWechat = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!wechatId.trim()) {
-      toast.error('请输入微信号');
+      toast.error('请输入微信号或手机号');
       return;
     }
 
+    if (submitting) return; // 防止重复提交
+
+    setSubmitting(true);
     try {
-      const res = await fetch('/api/visitor', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          recordId: visitorRecordId,
-          wechatId: wechatId.trim(),
-        }),
-      });
-      const data = await res.json();
+      // 如果没有 visitorRecordId，先创建访客记录
+      let currentRecordId = visitorRecordId;
       
-      if (data.data) {
-        setSubmitted(true);
-        toast.success('提交成功！我们会尽快联系您');
+      if (!currentRecordId) {
+        // 先创建访客记录
+        const createRes = await fetch('/api/visitor', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ promoterCode: code, wechatId: wechatId.trim() }),
+        });
+        const createData = await createRes.json();
+        
+        if (createData.data) {
+          setSubmitted(true);
+          toast.success('提交成功！我们会尽快联系您');
+          setVisitorRecordId(createData.data.id);
+        } else {
+          toast.error(createData.error || '提交失败，请重试');
+        }
       } else {
-        toast.error(data.error || '提交失败');
+        // 更新现有记录
+        const res = await fetch('/api/visitor', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            recordId: currentRecordId,
+            wechatId: wechatId.trim(),
+          }),
+        });
+        const data = await res.json();
+        
+        if (data.data) {
+          setSubmitted(true);
+          toast.success('提交成功！我们会尽快联系您');
+        } else {
+          toast.error(data.error || '提交失败，请重试');
+        }
       }
     } catch (error) {
-      toast.error('提交失败');
+      console.error('提交失败:', error);
+      toast.error('提交失败，请重试');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -379,9 +408,23 @@ export default function PromotionPage() {
                     className="mt-2 border-pink-200 focus:border-pink-400"
                   />
                 </div>
-                <Button type="submit" className="w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-lg py-6" size="lg">
-                  <Send className="h-5 w-5 mr-2" />
-                  提交
+                <Button 
+                  type="submit" 
+                  disabled={submitting || loading}
+                  className="w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-lg py-6 disabled:opacity-50 disabled:cursor-not-allowed" 
+                  size="lg"
+                >
+                  {submitting ? (
+                    <>
+                      <span className="animate-spin mr-2">⏳</span>
+                      提交中...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-5 w-5 mr-2" />
+                      提交
+                    </>
+                  )}
                 </Button>
                 <p className="text-xs text-gray-500 text-center">
                   您的信息仅用于产品咨询，我们会严格保密
