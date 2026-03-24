@@ -130,6 +130,39 @@ export default function AdminPage() {
     } catch (e) { alert('删除失败'); }
   };
 
+  // 复制到剪贴板（兼容手机）
+  const copyToClipboard = async (text: string) => {
+    try {
+      // 优先使用现代 API
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+        alert('链接已复制！');
+        return;
+      }
+      
+      // 备用方案：创建临时输入框
+      const input = document.createElement('input');
+      input.value = text;
+      input.style.position = 'fixed';
+      input.style.left = '-9999px';
+      document.body.appendChild(input);
+      input.select();
+      input.setSelectionRange(0, 99999);
+      const success = document.execCommand('copy');
+      document.body.removeChild(input);
+      
+      if (success) {
+        alert('链接已复制！');
+      } else {
+        // 最后备用：直接显示链接让用户手动复制
+        prompt('请手动复制链接：', text);
+      }
+    } catch (e) {
+      // 出错时显示链接让用户手动复制
+      prompt('请手动复制链接：', text);
+    }
+  };
+
   const getPromotionUrl = (code: string) => {
     if (typeof window !== 'undefined') {
       return `${window.location.origin}/p/${code}`;
@@ -163,7 +196,7 @@ export default function AdminPage() {
               <p className="text-center text-sm text-gray-500 mt-1">扫码访问推广页面</p>
               <div className="mt-4 flex gap-2">
                 <button 
-                  onClick={() => { navigator.clipboard.writeText(getPromotionUrl(qrcodePromoter.code)); alert('链接已复制'); }}
+                  onClick={() => copyToClipboard(getPromotionUrl(qrcodePromoter.code))}
                   className="flex-1 bg-blue-500 text-white py-2 rounded"
                 >
                   复制链接
@@ -196,7 +229,7 @@ export default function AdminPage() {
             )}
             {loading ? <p className="text-gray-500">加载中...</p> : promoters.length === 0 ? <p className="text-gray-500">暂无推广者</p> : (
               <table className="w-full"><thead className="bg-gray-50"><tr><th className="px-4 py-2 text-left">姓名</th><th className="px-4 py-2 text-left">电话</th><th className="px-4 py-2 text-left">推广码</th><th className="px-4 py-2 text-left">创建时间</th><th className="px-4 py-2 text-left">操作</th></tr></thead>
-                <tbody>{promoters.map((p) => (<tr key={p.id} className="border-t"><td className="px-4 py-2">{p.name}</td><td className="px-4 py-2">{p.phone || '-'}</td><td className="px-4 py-2"><code className="bg-gray-100 px-2 py-1 rounded">{p.code}</code></td><td className="px-4 py-2">{new Date(p.created_at).toLocaleDateString()}</td><td className="px-4 py-2 flex gap-2"><button onClick={() => setQrcodePromoter(p)} className="text-blue-500 hover:underline">二维码</button><button onClick={() => { navigator.clipboard.writeText(getPromotionUrl(p.code)); alert('链接已复制'); }} className="text-green-500 hover:underline">复制链接</button><button onClick={() => deletePromoter(p.id)} className="text-red-500 hover:underline">删除</button></td></tr>))}</tbody></table>
+                <tbody>{promoters.map((p) => (<tr key={p.id} className="border-t"><td className="px-4 py-2">{p.name}</td><td className="px-4 py-2">{p.phone || '-'}</td><td className="px-4 py-2"><code className="bg-gray-100 px-2 py-1 rounded">{p.code}</code></td><td className="px-4 py-2">{new Date(p.created_at).toLocaleDateString()}</td><td className="px-4 py-2"><div className="flex gap-2 flex-wrap"><button onClick={() => setQrcodePromoter(p)} className="text-blue-500 hover:underline">二维码</button><button onClick={() => copyToClipboard(getPromotionUrl(p.code))} className="text-green-500 hover:underline">复制链接</button><button onClick={() => { if(confirm('确定删除？')) { fetch(`/api/admin/promoters?id=${p.id}`, { method: 'DELETE' }).then(res => res.json()).then(data => { if(data.success) { setPromoters(promoters.filter(item => item.id !== p.id)); alert('删除成功'); } else { alert('删除失败：' + data.error); } }).catch(() => alert('删除失败')); } }} className="text-red-500 hover:underline">删除</button></div></td></tr>))}</tbody></table>
             )}
           </div>
         )}
@@ -219,7 +252,7 @@ export default function AdminPage() {
               </div>
             )}
             {loading ? <p className="text-gray-500">加载中...</p> : contents.length === 0 ? <p className="text-gray-500">暂无内容</p> : (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">{contents.map((c) => (<div key={c.id} className="border rounded p-4">{c.type === 'image' ? <img src={c.url} alt={c.title} className="w-full h-32 object-cover rounded mb-2" /> : <div className="w-full h-32 bg-gray-200 rounded mb-2 flex items-center justify-center"><span className="text-4xl">🎬</span></div>}<h3 className="font-medium">{c.title}</h3><p className="text-sm text-gray-500">{c.description}</p><p className="text-xs text-gray-400 mt-2">{c.type === 'image' ? '图片' : '视频'} · {new Date(c.created_at).toLocaleDateString()}</p><button onClick={() => deleteContent(c.id)} className="mt-2 text-red-500 text-sm hover:underline">删除</button></div>))}</div>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">{contents.map((c) => (<div key={c.id} className="border rounded p-4">{c.type === 'image' ? <img src={c.url} alt={c.title} className="w-full h-32 object-cover rounded mb-2" /> : <div className="w-full h-32 bg-gray-200 rounded mb-2 flex items-center justify-center"><span className="text-4xl">🎬</span></div>}<h3 className="font-medium">{c.title}</h3><p className="text-sm text-gray-500">{c.description}</p><p className="text-xs text-gray-400 mt-2">{c.type === 'image' ? '图片' : '视频'} · {new Date(c.created_at).toLocaleDateString()}</p><button onClick={() => { if(confirm('确定删除？')) { fetch(`/api/admin/contents?id=${c.id}`, { method: 'DELETE' }).then(res => res.json()).then(data => { if(data.success) { setContents(contents.filter(item => item.id !== c.id)); alert('删除成功'); } else { alert('删除失败：' + data.error); } }).catch(() => alert('删除失败')); } }} className="mt-3 px-4 py-2 bg-red-500 text-white rounded text-sm hover:bg-red-600 active:bg-red-700">删除</button></div>))}</div>
             )}
           </div>
         )}

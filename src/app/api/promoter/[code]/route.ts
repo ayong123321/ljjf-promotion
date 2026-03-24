@@ -44,23 +44,36 @@ export async function GET(
     const totalVisits = visitorRecords?.length || 0;
     const wechatSubmissions = visitorRecords?.filter(v => v.wechat).length || 0;
 
-    // 获取推广内容
+    // 获取所有推广内容
     const { data: contents } = await client
       .from('promotion_contents')
       .select('*')
-      .order('created_at', { ascending: false })
-      .limit(1);
-    
-    const content = contents?.[0] || null;
+      .order('created_at', { ascending: false });
 
-    // 格式化内容
-    const formattedContent = content ? {
-      title: content.title,
-      description: content.description,
-      image_url: content.type === 'image' ? content.url : null,
-      video_url: content.type === 'video' ? content.url : null,
-      store_image_url: null
-    } : null;
+    // 分离图片和视频内容
+    const images = contents?.filter(c => c.type === 'image').map(c => ({
+      title: c.title,
+      description: c.description,
+      url: c.url,
+    })) || [];
+
+    const videos = contents?.filter(c => c.type === 'video').map(c => ({
+      title: c.title,
+      description: c.description,
+      url: c.url,
+    })) || [];
+
+    // 格式化内容 - 返回所有图片和视频
+    const formattedContent = {
+      title: contents?.[0]?.title || '假发推广',
+      description: contents?.[0]?.description || null,
+      images: images,
+      videos: videos,
+      // 兼容旧格式
+      image_url: images[0]?.url || null,
+      video_url: videos[0]?.url || null,
+      store_image_url: images[1]?.url || null,
+    };
 
     return NextResponse.json({
       data: {

@@ -24,6 +24,8 @@ export default function PromotionPage() {
   const [content, setContent] = useState<{
     title: string;
     description: string | null;
+    images: Array<{ title: string; description: string; url: string }>;
+    videos: Array<{ title: string; description: string; url: string }>;
     image_url: string | null;
     video_url: string | null;
     store_image_url: string | null;
@@ -105,34 +107,24 @@ export default function PromotionPage() {
     );
   }
 
-  if (!content) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-2">内容不存在</h2>
-          <p className="text-gray-600">请确认链接是否正确</p>
-        </div>
-      </div>
-    );
-  }
-
+  // 即使没有内容，只要有推广者就显示页面
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 py-12 px-4">
       <div className="max-w-2xl mx-auto">
         {/* 标题和描述卡片 */}
         <Card className="mb-6 overflow-hidden shadow-lg">
           <CardHeader>
-            <CardTitle className="text-2xl text-orange-500">{content.title}</CardTitle>
+            <CardTitle className="text-2xl text-orange-500">{content?.title || '假发推广'}</CardTitle>
           </CardHeader>
-          {content.description && (
+          {content?.description && (
             <CardContent>
               <p className="text-gray-700 whitespace-pre-wrap">{content.description}</p>
             </CardContent>
           )}
         </Card>
 
-        {/* 门店图片 */}
-        {content.store_image_url && (
+        {/* 门店图片 - 第二张图片作为门店图片 */}
+        {content?.store_image_url && (
           <Card className="mb-6 overflow-hidden shadow-lg border-2 border-purple-300">
             <CardContent className="p-0">
               <div className="w-full flex justify-center bg-gray-100 p-2">
@@ -146,8 +138,8 @@ export default function PromotionPage() {
           </Card>
         )}
 
-        {/* 导航视频 */}
-        {content.video_url && (
+        {/* 导航视频 - 显示第一个视频 */}
+        {content?.videos && content.videos.length > 0 && (
           <Card className="mb-6 overflow-hidden shadow-lg border-2 border-green-400">
             <CardContent className="p-0">
               <div className="p-4 bg-gradient-to-b from-green-50 to-white">
@@ -157,7 +149,7 @@ export default function PromotionPage() {
                     if (isWechat()) {
                       setShowGuide(true);
                     } else {
-                      window.location.href = content.video_url!.trim();
+                      window.location.href = content!.videos![0].url.trim();
                     }
                   }}
                   className="w-full flex flex-col items-center justify-center py-8 cursor-pointer"
@@ -193,6 +185,37 @@ export default function PromotionPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* 其他视频 */}
+        {content?.videos && content.videos.length > 1 && content.videos.slice(1).map((video, index) => (
+          <Card key={index} className="mb-6 overflow-hidden shadow-lg border-2 border-green-300">
+            <CardContent className="p-0">
+              <div className="p-4 bg-gradient-to-b from-green-50 to-white">
+                <button 
+                  onClick={() => {
+                    if (isWechat()) {
+                      setShowGuide(true);
+                    } else {
+                      window.location.href = video.url.trim();
+                    }
+                  }}
+                  className="w-full flex flex-col items-center justify-center py-6 cursor-pointer"
+                >
+                  <div className="relative mb-3">
+                    <div className="w-16 h-16 bg-gradient-to-br from-pink-500 to-red-500 rounded-full flex items-center justify-center shadow-lg">
+                      <Play className="h-8 w-8 text-white ml-1" />
+                    </div>
+                  </div>
+                  <p className="text-gray-700 font-medium">{video.title || `视频 ${index + 2}`}</p>
+                  {video.description && <p className="text-gray-500 text-sm mt-1">{video.description}</p>}
+                  <span className="mt-3 px-6 py-2 bg-gradient-to-r from-pink-500 to-red-500 text-white rounded-full font-medium">
+                    点击观看
+                  </span>
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
 
         {/* 微信引导弹窗 */}
         {showGuide && (
@@ -332,20 +355,28 @@ export default function PromotionPage() {
           </CardContent>
         </Card>
 
-        {/* 宣传图片 */}
-        {content.image_url && (
-          <Card className="mt-6 overflow-hidden shadow-lg">
+        {/* 宣传图片 - 显示所有图片 */}
+        {content?.images && content.images.length > 0 && content.images.map((img, index) => (
+          <Card key={index} className="mt-6 overflow-hidden shadow-lg">
             <CardContent className="p-0">
               <div className="w-full flex justify-center bg-gray-100 p-2">
                 <img
-                  src={content.image_url}
-                  alt={content.title}
+                  src={img.url}
+                  alt={img.title || `图片 ${index + 1}`}
                   className="max-w-full max-h-[60vh] object-contain"
                 />
               </div>
+              {img.title && (
+                <div className="p-3 bg-white">
+                  <p className="text-center font-medium text-gray-700">{img.title}</p>
+                  {img.description && (
+                    <p className="text-center text-sm text-gray-500 mt-1">{img.description}</p>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
-        )}
+        ))}
       </div>
     </div>
   );
