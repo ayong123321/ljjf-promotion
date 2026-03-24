@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Send, CheckCircle, MapPin, Phone, Copy, Play, X } from 'lucide-react';
+import { Send, CheckCircle, MapPin, Phone, Copy, Play } from 'lucide-react';
 
 // 检测是否在微信环境
 const isWechat = () => {
@@ -26,9 +26,6 @@ export default function PromotionPage() {
     description: string | null;
     images: Array<{ title: string; description: string; url: string }>;
     videos: Array<{ title: string; description: string; url: string }>;
-    image_url: string | null;
-    video_url: string | null;
-    store_image_url: string | null;
   } | null>(null);
   const [visitorRecordId, setVisitorRecordId] = useState<number | null>(null);
   const [wechatId, setWechatId] = useState('');
@@ -101,121 +98,142 @@ export default function PromotionPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
-        <div className="text-lg">加载中...</div>
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-pink-50 to-orange-50">
+        <div className="text-lg text-pink-600">加载中...</div>
       </div>
     );
   }
 
-  // 即使没有内容，只要有推广者就显示页面
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-orange-50 py-6 px-4">
       <div className="max-w-2xl mx-auto">
-        {/* 标题和描述卡片 */}
-        <Card className="mb-6 overflow-hidden shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-2xl text-orange-500">{content?.title || '假发推广'}</CardTitle>
-          </CardHeader>
-          {content?.description && (
-            <CardContent>
-              <p className="text-gray-700 whitespace-pre-wrap">{content.description}</p>
-            </CardContent>
-          )}
+        
+        {/* ========== 第一个板块：欢迎语 ========== */}
+        <Card className="mb-6 overflow-hidden shadow-xl border-0">
+          <div className="bg-gradient-to-br from-pink-500 via-rose-500 to-orange-400 p-1">
+            <div className="bg-white rounded-lg p-6">
+              <div className="text-center space-y-4">
+                {/* 主标题 */}
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-pink-600 via-rose-500 to-orange-500 bg-clip-text text-transparent">
+                  你好呀～欢迎来到玲姐假发
+                </h1>
+                
+                {/* 分隔线 */}
+                <div className="flex items-center justify-center gap-2">
+                  <div className="h-px w-12 bg-gradient-to-r from-transparent to-pink-300"></div>
+                  <span className="text-pink-400">✨</span>
+                  <div className="h-px w-12 bg-gradient-to-l from-transparent to-pink-300"></div>
+                </div>
+                
+                {/* 副标题 */}
+                <p className="text-xl font-semibold text-rose-600">
+                  我们是长清14年假发老店
+                </p>
+                
+                {/* 服务项目 */}
+                <div className="flex flex-wrap justify-center gap-2 py-2">
+                  <span className="px-4 py-1.5 bg-pink-100 text-pink-700 rounded-full text-sm font-medium">
+                    专业遮白发
+                  </span>
+                  <span className="px-4 py-1.5 bg-rose-100 text-rose-700 rounded-full text-sm font-medium">
+                    增发
+                  </span>
+                  <span className="px-4 py-1.5 bg-orange-100 text-orange-700 rounded-full text-sm font-medium">
+                    时尚发型
+                  </span>
+                </div>
+                
+                {/* 询问语 */}
+                <p className="text-lg text-gray-700 pt-2">
+                  想问下你是想<span className="text-pink-600 font-semibold">自己戴</span>，还是给<span className="text-orange-600 font-semibold">家人看</span>呀？
+                </p>
+              </div>
+            </div>
+          </div>
         </Card>
 
-        {/* 门店图片 - 第二张图片作为门店图片 */}
-        {content?.store_image_url && (
-          <Card className="mb-6 overflow-hidden shadow-lg border-2 border-purple-300">
+        {/* ========== 第二个板块：图片展示 ========== */}
+        {content?.images && content.images.length > 0 && (
+          <Card className="mb-6 overflow-hidden shadow-lg border-2 border-pink-200">
+            <div className="bg-gradient-to-r from-pink-500 to-rose-500 py-3 px-4">
+              <h2 className="text-white text-xl font-bold text-center flex items-center justify-center gap-2">
+                <span>📸</span>
+                <span>精选图片</span>
+              </h2>
+            </div>
             <CardContent className="p-0">
-              <div className="w-full flex justify-center bg-gray-100 p-2">
-                <img
-                  src={content.store_image_url}
-                  alt="门店图片"
-                  className="max-w-full max-h-[50vh] object-contain"
-                />
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* 导航视频 - 显示第一个视频 */}
-        {content?.videos && content.videos.length > 0 && (
-          <Card className="mb-6 overflow-hidden shadow-lg border-2 border-green-400">
-            <CardContent className="p-0">
-              <div className="p-4 bg-gradient-to-b from-green-50 to-white">
-                {/* 点击按钮 */}
-                <button 
-                  onClick={() => {
-                    if (isWechat()) {
-                      setShowGuide(true);
-                    } else {
-                      window.location.href = content!.videos![0].url.trim();
-                    }
-                  }}
-                  className="w-full flex flex-col items-center justify-center py-8 cursor-pointer"
-                >
-                  <div className="relative mb-4">
-                    <div className="absolute inset-0 bg-gradient-to-r from-pink-500 to-red-500 rounded-full blur-xl opacity-50 animate-pulse"></div>
-                    <div className="relative w-24 h-24 bg-gradient-to-br from-pink-500 to-red-500 rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition-transform">
-                      <Play className="h-12 w-12 text-white ml-1" />
-                    </div>
+              {content.images.map((img, index) => (
+                <div key={index} className="border-b last:border-b-0">
+                  <div className="w-full flex justify-center bg-gray-50 p-3">
+                    <img
+                      src={img.url}
+                      alt={img.title || `图片 ${index + 1}`}
+                      className="max-w-full max-h-[60vh] object-contain rounded-lg shadow-md"
+                    />
                   </div>
-                  <p className="text-gray-600 mb-4 text-center font-medium">点击观看抖音视频</p>
-                  <span className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-pink-500 to-red-500 text-white rounded-full font-bold text-lg shadow-lg hover:from-pink-600 hover:to-red-600 transition-all transform hover:scale-105">
-                    点击知道门店地址
-                  </span>
-                </button>
-              </div>
-              <div className="relative bg-gradient-to-r from-green-500 to-emerald-500 py-4 px-4 overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-400 animate-pulse opacity-50"></div>
-                <div className="absolute inset-0 overflow-hidden">
-                  <div className="absolute -left-4 top-0 h-full w-8 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-[shimmer_2s_infinite] transform -skew-x-12"></div>
+                  {img.title && (
+                    <div className="p-3 bg-white text-center">
+                      <p className="font-medium text-gray-700">{img.title}</p>
+                      {img.description && (
+                        <p className="text-sm text-gray-500 mt-1">{img.description}</p>
+                      )}
+                    </div>
+                  )}
                 </div>
-                <h3 className="relative text-white text-2xl font-bold text-center flex items-center justify-center gap-3">
-                  <span className="inline-block animate-bounce text-3xl">🎬</span>
-                  <span className="relative">
-                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-white via-yellow-200 to-white animate-[text-shine_3s_ease-in-out_infinite] bg-[length:200%_100%]">
-                      假发店地址导航视频
-                    </span>
-                    <span className="absolute -bottom-1 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-yellow-300 to-transparent animate-pulse"></span>
-                  </span>
-                  <span className="inline-block animate-bounce text-3xl" style={{ animationDelay: '0.15s' }}>🎬</span>
-                </h3>
-              </div>
+              ))}
             </CardContent>
           </Card>
         )}
 
-        {/* 其他视频 */}
-        {content?.videos && content.videos.length > 1 && content.videos.slice(1).map((video, index) => (
-          <Card key={index} className="mb-6 overflow-hidden shadow-lg border-2 border-green-300">
+        {/* ========== 第三个板块：视频展示 ========== */}
+        {content?.videos && content.videos.length > 0 && (
+          <Card className="mb-6 overflow-hidden shadow-lg border-2 border-green-300">
+            <div className="bg-gradient-to-r from-green-500 to-emerald-500 py-3 px-4">
+              <h2 className="text-white text-xl font-bold text-center flex items-center justify-center gap-2">
+                <span>🎬</span>
+                <span>假发店地址导航视频</span>
+              </h2>
+            </div>
             <CardContent className="p-0">
-              <div className="p-4 bg-gradient-to-b from-green-50 to-white">
-                <button 
-                  onClick={() => {
-                    if (isWechat()) {
-                      setShowGuide(true);
-                    } else {
-                      window.location.href = video.url.trim();
-                    }
-                  }}
-                  className="w-full flex flex-col items-center justify-center py-6 cursor-pointer"
-                >
-                  <div className="relative mb-3">
-                    <div className="w-16 h-16 bg-gradient-to-br from-pink-500 to-red-500 rounded-full flex items-center justify-center shadow-lg">
-                      <Play className="h-8 w-8 text-white ml-1" />
+              {content.videos.map((video, index) => (
+                <div key={index} className="p-4 bg-gradient-to-b from-green-50 to-white border-b last:border-b-0">
+                  <button 
+                    onClick={() => {
+                      if (isWechat()) {
+                        setShowGuide(true);
+                      } else {
+                        window.location.href = video.url.trim();
+                      }
+                    }}
+                    className="w-full flex flex-col items-center justify-center py-6 cursor-pointer hover:bg-green-50/50 rounded-lg transition-colors"
+                  >
+                    <div className="relative mb-4">
+                      <div className="absolute inset-0 bg-gradient-to-r from-pink-500 to-red-500 rounded-full blur-xl opacity-40 animate-pulse"></div>
+                      <div className={`relative ${index === 0 ? 'w-24 h-24' : 'w-16 h-16'} bg-gradient-to-br from-pink-500 to-red-500 rounded-full flex items-center justify-center shadow-xl`}>
+                        <Play className={`${index === 0 ? 'h-12 w-12' : 'h-8 w-8'} text-white ml-1`} />
+                      </div>
                     </div>
-                  </div>
-                  <p className="text-gray-700 font-medium">{video.title || `视频 ${index + 2}`}</p>
-                  {video.description && <p className="text-gray-500 text-sm mt-1">{video.description}</p>}
-                  <span className="mt-3 px-6 py-2 bg-gradient-to-r from-pink-500 to-red-500 text-white rounded-full font-medium">
-                    点击观看
-                  </span>
-                </button>
-              </div>
+                    
+                    {index === 0 && (
+                      <p className="text-gray-600 mb-3 text-center font-medium">点击观看抖音视频</p>
+                    )}
+                    
+                    <span className={`inline-flex items-center gap-2 ${index === 0 ? 'px-8 py-4 text-lg' : 'px-6 py-3 text-base'} bg-gradient-to-r from-pink-500 to-red-500 text-white rounded-full font-bold shadow-lg hover:from-pink-600 hover:to-red-600 transition-all transform hover:scale-105`}>
+                      点击知道门店地址
+                    </span>
+                    
+                    {video.title && index > 0 && (
+                      <p className="text-gray-700 font-medium mt-3">{video.title}</p>
+                    )}
+                    {video.description && index > 0 && (
+                      <p className="text-gray-500 text-sm mt-1">{video.description}</p>
+                    )}
+                  </button>
+                </div>
+              ))}
             </CardContent>
           </Card>
-        ))}
+        )}
 
         {/* 微信引导弹窗 */}
         {showGuide && (
@@ -223,17 +241,11 @@ export default function PromotionPage() {
             className="fixed inset-0 z-50 flex items-start justify-end"
             onClick={() => setShowGuide(false)}
           >
-            {/* 半透明背景 */}
             <div className="absolute inset-0 bg-black/60"></div>
-            
-            {/* 引导内容 */}
             <div className="relative mt-4 mr-4 max-w-xs animate-pulse">
-              {/* 橙色弹窗 */}
               <div className="bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl p-5 shadow-2xl">
                 <div className="text-white text-center">
-                  {/* 箭头指向右上角 */}
                   <div className="absolute -top-2 right-8 w-0 h-0 border-l-8 border-r-8 border-b-8 border-transparent border-b-orange-500"></div>
-                  
                   <p className="text-xl font-bold mb-3">👆 点击右上角</p>
                   <div className="bg-white/20 rounded-xl p-4 mb-3">
                     <p className="text-lg font-medium">点击「...」</p>
@@ -246,7 +258,7 @@ export default function PromotionPage() {
           </div>
         )}
 
-        {/* 门店信息 */}
+        {/* ========== 第四个板块：门店信息 ========== */}
         <Card className="mb-6 shadow-lg bg-gradient-to-r from-orange-50 to-pink-50 border-orange-200">
           <CardContent className="pt-6">
             <div className="text-center mb-4">
@@ -269,7 +281,7 @@ export default function PromotionPage() {
                   className="relative inline-flex items-center justify-center"
                 >
                   <span className="absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75 animate-ping"></span>
-                  <span className="relative inline-flex items-center px-4 py-2 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 text-white text-sm font-bold shadow-lg hover:from-green-600 hover:to-emerald-600 transition-all transform hover:scale-105">
+                  <span className="relative inline-flex items-center px-4 py-2 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 text-white text-sm font-bold shadow-lg">
                     点击导航
                   </span>
                 </a>
@@ -306,24 +318,25 @@ export default function PromotionPage() {
           </CardContent>
         </Card>
 
-        {/* 联系表单 */}
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+        {/* ========== 第五个板块：联系表单 ========== */}
+        <Card className="shadow-lg border-2 border-pink-200">
+          <div className="bg-gradient-to-r from-pink-500 to-rose-500 py-3 px-4">
+            <h2 className="text-white text-xl font-bold text-center flex items-center justify-center gap-2">
               {submitted ? (
                 <>
-                  <CheckCircle className="h-5 w-5 text-green-500" />
+                  <CheckCircle className="h-5 w-5" />
                   提交成功
                 </>
               ) : (
                 <>
                   <Send className="h-5 w-5" />
-                  留下联系方式<span className="text-red-500">（到店可领取礼品一份）</span>
+                  留下联系方式
+                  <span className="text-yellow-200 text-sm">（到店可领取礼品一份）</span>
                 </>
               )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+            </h2>
+          </div>
+          <CardContent className="p-6">
             {submitted ? (
               <div className="text-center py-8">
                 <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
@@ -333,18 +346,18 @@ export default function PromotionPage() {
             ) : (
               <form onSubmit={handleSubmitWechat} className="space-y-4">
                 <div>
-                  <Label htmlFor="wechat">微信号或手机号</Label>
+                  <Label htmlFor="wechat" className="text-gray-700 font-medium">微信号或手机号</Label>
                   <Input
                     id="wechat"
                     type="text"
                     placeholder="请输入您的微信号或手机号"
                     value={wechatId}
                     onChange={(e) => setWechatId(e.target.value)}
-                    className="mt-1"
+                    className="mt-2 border-pink-200 focus:border-pink-400"
                   />
                 </div>
-                <Button type="submit" className="w-full" size="lg">
-                  <Send className="h-4 w-4 mr-2" />
+                <Button type="submit" className="w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-lg py-6" size="lg">
+                  <Send className="h-5 w-5 mr-2" />
                   提交
                 </Button>
                 <p className="text-xs text-gray-500 text-center">
@@ -354,29 +367,6 @@ export default function PromotionPage() {
             )}
           </CardContent>
         </Card>
-
-        {/* 宣传图片 - 显示所有图片 */}
-        {content?.images && content.images.length > 0 && content.images.map((img, index) => (
-          <Card key={index} className="mt-6 overflow-hidden shadow-lg">
-            <CardContent className="p-0">
-              <div className="w-full flex justify-center bg-gray-100 p-2">
-                <img
-                  src={img.url}
-                  alt={img.title || `图片 ${index + 1}`}
-                  className="max-w-full max-h-[60vh] object-contain"
-                />
-              </div>
-              {img.title && (
-                <div className="p-3 bg-white">
-                  <p className="text-center font-medium text-gray-700">{img.title}</p>
-                  {img.description && (
-                    <p className="text-center text-sm text-gray-500 mt-1">{img.description}</p>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
       </div>
     </div>
   );
