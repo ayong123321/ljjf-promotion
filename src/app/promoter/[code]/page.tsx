@@ -61,10 +61,8 @@ export default function PromoterPage() {
       const result = await res.json();
       if (result.data) {
         setData(result.data);
-        // 使用正式域名生成二维码
-        const domain = process.env.NEXT_PUBLIC_COZE_PROJECT_DOMAIN_DEFAULT || window.location.origin;
-        const promotionUrl = `${domain}/p/${code}`;
-        setQrCodeUrl(`/api/qrcode?url=${encodeURIComponent(promotionUrl)}`);
+        // 使用服务端API生成二维码
+        setQrCodeUrl(`/api/promoter/${code}/qrcode`);
       } else {
         toast.error(result.error || '获取数据失败');
       }
@@ -85,14 +83,23 @@ export default function PromoterPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const downloadQRCode = () => {
-    const link = document.createElement('a');
-    link.href = qrCodeUrl;
-    link.download = `推广二维码_${code}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success('二维码已下载，可以发朋友圈了！');
+  const downloadQRCode = async () => {
+    try {
+      const response = await fetch(`/api/promoter/${code}/qrcode`);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `推广二维码_${code}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success('二维码已下载，可以发朋友圈了！');
+    } catch (error) {
+      console.error('下载二维码失败:', error);
+      toast.error('下载二维码失败');
+    }
   };
 
   if (loading) {

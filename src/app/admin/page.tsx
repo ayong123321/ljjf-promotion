@@ -265,10 +265,29 @@ export default function AdminPage() {
   };
 
   const getPromotionUrl = (code: string) => {
-    // 优先使用环境变量中的正式域名（生产环境）
+    // 使用正式域名
     const domain = process.env.NEXT_PUBLIC_COZE_PROJECT_DOMAIN_DEFAULT || 
-                   (typeof window !== 'undefined' ? window.location.origin : '');
+                   'https://439a0333-2b4f-48ab-a2a5-c6e2506a2e5f.dev.coze.site';
     return `${domain}/p/${code}`;
+  };
+
+  // 下载二维码图片
+  const downloadQRCode = async (code: string) => {
+    try {
+      const response = await fetch(`/api/promoter/${code}/qrcode`);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `推广二维码_${code}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('下载二维码失败:', error);
+      alert('下载二维码失败');
+    }
   };
 
   return (
@@ -310,17 +329,17 @@ export default function AdminPage() {
             <div className="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full" onClick={e => e.stopPropagation()}>
               <div className="bg-white p-4 flex justify-center">
                 <img 
-                  src={`/api/qrcode?url=${encodeURIComponent(getPromotionUrl(qrcodePromoter.code))}`} 
+                  src={`/api/promoter/${qrcodePromoter.code}/qrcode`}
                   alt="推广二维码" 
                   className="w-48 h-48 md:w-64 md:h-64"
                 />
               </div>
               <div className="mt-4 flex gap-2">
                 <button 
-                  onClick={() => copyToClipboard(getPromotionUrl(qrcodePromoter.code))}
-                  className="flex-1 bg-blue-500 text-white py-3 rounded font-medium"
+                  onClick={() => downloadQRCode(qrcodePromoter.code)}
+                  className="flex-1 bg-green-500 text-white py-3 rounded font-medium"
                 >
-                  复制链接
+                  下载二维码
                 </button>
                 <button 
                   onClick={() => setQrcodePromoter(null)}
