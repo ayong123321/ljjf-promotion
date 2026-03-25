@@ -49,18 +49,32 @@ export async function GET(
       code: (promoter as { id: number; name: string; unique_code: string }).unique_code
     };
     
-    // 获取统计数据
+    // 获取访客记录
     const { data: visitors } = await client
       .from('visitor_records')
       .select('*')
       .eq('promoter_id', promoterData.id);
     
+    // 获取统计数据
+    // 独立访客：按IP去重
+    // 总访问次数：所有记录数（包含同一IP的多次访问）
+    // 留微信数：有wechat_id的记录数（按最新记录统计，避免重复）
+    const uniqueIps = new Set(visitors?.map((v: { ip_address: string }) => v.ip_address));
+    
+    // 统计有微信的记录（每个IP只算一次，取最新的那条）
+    const ipWechatMap = new Map<string, boolean>();
+    visitors?.forEach((v: { ip_address: string; wechat_id: string | null }) => {
+      if (v.wechat_id) {
+        ipWechatMap.set(v.ip_address, true);
+      }
+    });
+    
     const stats = {
       totalVisits: visitors?.length || 0,
-      uniqueVisitors: new Set(visitors?.map(v => v.ip_address)).size || 0,
-      wechatSubmissions: visitors?.filter(v => v.wechat_id).length || 0,
-      addedCount: visitors?.filter(v => mapStatus(v.deal_status) === 'added').length || 0,
-      dealedCount: visitors?.filter(v => mapStatus(v.deal_status) === 'dealed').length || 0
+      uniqueVisitors: uniqueIps.size || 0,
+      wechatSubmissions: ipWechatMap.size || 0,
+      addedCount: visitors?.filter((v: { deal_status: string | null }) => mapStatus(v.deal_status) === 'added').length || 0,
+      dealedCount: visitors?.filter((v: { deal_status: string | null }) => mapStatus(v.deal_status) === 'dealed').length || 0
     };
     
     // 获取所有内容（图片和视频）

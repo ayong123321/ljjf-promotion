@@ -17,7 +17,7 @@ function getClientIp(request: NextRequest): string {
   return request.headers.get('x-real-ip') || 'unknown';
 }
 
-// 记录访客访问（幂等操作）
+// 记录访客访问（幂等操作：每个推广者+IP只保留一条记录）
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -47,23 +47,24 @@ export async function POST(request: NextRequest) {
     
     const promoterId = (promoter as Record<string, unknown>).id;
 
-    // 先查询是否已有记录
-    const { data: existing, error: queryError } = await client
+    // 查询该IP的最新记录（使用limit避免maybeSingle的问题）
+    const { data: existingRecords, error: queryError } = await client
       .from('visitor_records')
       .select('*')
       .eq('promoter_id', promoterId)
       .eq('ip_address', ipAddress)
-      .maybeSingle();
+      .order('created_at', { ascending: false })
+      .limit(1);
 
     if (queryError) {
       console.error('[POST] 查询失败:', queryError);
       return NextResponse.json({ error: '查询失败' }, { status: 500 });
     }
 
-    // 有记录则返回
-    if (existing) {
-      console.log('[POST] 返回已有记录:', existing);
-      return NextResponse.json({ data: existing });
+    // 有记录则返回最新的那条
+    if (existingRecords && existingRecords.length > 0) {
+      console.log('[POST] 返回已有记录:', existingRecords[0]);
+      return NextResponse.json({ data: existingRecords[0] });
     }
 
     // 无记录则创建
@@ -81,17 +82,17 @@ export async function POST(request: NextRequest) {
 
     if (insertError) {
       console.error('[POST] 创建失败:', insertError);
-      // 可能是并发创建导致的冲突，尝试再次查询
-      const { data: retryRecord } = await client
+      // 可能是并发创建，再次查询
+      const { data: retryRecords } = await client
         .from('visitor_records')
         .select('*')
         .eq('promoter_id', promoterId)
         .eq('ip_address', ipAddress)
-        .maybeSingle();
+        .order('created_at', { ascending: false })
+        .limit(1);
       
-      if (retryRecord) {
-        console.log('[POST] 重试查询成功:', retryRecord);
-        return NextResponse.json({ data: retryRecord });
+      if (retryRecords && retryRecords.length > 0) {
+        return NextResponse.json({ data: retryRecords[0] });
       }
       
       return NextResponse.json({ error: insertError.message }, { status: 500 });
@@ -157,22 +158,35 @@ export async function PUT(request: NextRequest) {
       const promoterId = (promoter as Record<string, unknown>).id;
       console.log('[PUT] 查找记录:', { promoterId, ipAddress });
 
-      // 先尝试更新
-      const { data: updated, error: updateError } = await client
+      // 查找该IP的最新记录
+      const { data: existingRecords, error: queryError } = await client
         .from('visitor_records')
-        .update({ wechat_id: wechatId })
+        .select('*')
         .eq('promoter_id', promoterId)
         .eq('ip_address', ipAddress)
-        .select()
-        .maybeSingle();
+        .order('created_at', { ascending: false })
+        .limit(1);
 
-      if (updateError) {
-        console.error('[PUT] 更新出错:', updateError);
-        return NextResponse.json({ error: updateError.message }, { status: 500 });
+      if (queryError) {
+        console.error('[PUT] 查询出错:', queryError);
+        return NextResponse.json({ error: queryError.message }, { status: 500 });
       }
 
-      // 更新成功
-      if (updated) {
+      // 找到记录，更新
+      if (existingRecords && existingRecords.length > 0) {
+        const existingId = existingRecords[0].id;
+        const { data: updated, error: updateError } = await client
+          .from('visitor_records')
+          .update({ wechat_id: wechatId })
+          .eq('id', existingId)
+          .select()
+          .single();
+
+        if (updateError) {
+          console.error('[PUT] 更新失败:', updateError);
+          return NextResponse.json({ error: updateError.message }, { status: 500 });
+        }
+
         console.log('[PUT] 更新成功:', updated);
         return NextResponse.json({ data: updated });
       }
@@ -192,18 +206,26 @@ export async function PUT(request: NextRequest) {
 
       if (insertError) {
         console.error('[PUT] 创建失败:', insertError);
-        // 可能是并发创建，尝试再次更新
-        const { data: retryUpdate } = await client
+        // 可能是并发创建，再次查询并更新
+        const { data: retryRecords } = await client
           .from('visitor_records')
-          .update({ wechat_id: wechatId })
+          .select('*')
           .eq('promoter_id', promoterId)
           .eq('ip_address', ipAddress)
-          .select()
-          .maybeSingle();
+          .order('created_at', { ascending: false })
+          .limit(1);
         
-        if (retryUpdate) {
-          console.log('[PUT] 重试更新成功:', retryUpdate);
-          return NextResponse.json({ data: retryUpdate });
+        if (retryRecords && retryRecords.length > 0) {
+          const { data: retryUpdate } = await client
+            .from('visitor_records')
+            .update({ wechat_id: wechatId })
+            .eq('id', retryRecords[0].id)
+            .select()
+            .single();
+          
+          if (retryUpdate) {
+            return NextResponse.json({ data: retryUpdate });
+          }
         }
         
         return NextResponse.json({ error: insertError.message }, { status: 500 });

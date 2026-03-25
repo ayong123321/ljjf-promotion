@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 
 interface VisitorRecord {
@@ -36,12 +36,9 @@ export default function PromoterDashboard() {
   });
   const [visitors, setVisitors] = useState<VisitorRecord[]>([]);
   const [activeTab, setActiveTab] = useState<'stats' | 'visitors'>('stats');
+  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
 
-  useEffect(() => {
-    fetchPromoterData();
-  }, [code]);
-
-  const fetchPromoterData = async () => {
+  const fetchPromoterData = useCallback(async (isInitial = false) => {
     try {
       const res = await fetch(`/api/promoter/${code}`);
       const data = await res.json();
@@ -61,13 +58,31 @@ export default function PromoterDashboard() {
         if (visitorsData.success) {
           setVisitors(visitorsData.data || []);
         }
+        
+        setLastUpdate(new Date());
       }
     } catch (e) {
       console.error(e);
     } finally {
-      setLoading(false);
+      if (isInitial) {
+        setLoading(false);
+      }
     }
-  };
+  }, [code]);
+
+  // 初始加载
+  useEffect(() => {
+    fetchPromoterData(true);
+  }, [fetchPromoterData]);
+
+  // 实时更新：每5秒轮询一次
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchPromoterData(false);
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [fetchPromoterData]);
 
   // 格式化时间为友好的格式
   const formatTime = (dateStr: string) => {
@@ -312,9 +327,12 @@ export default function PromoterDashboard() {
           </div>
         )}
 
-        {/* 底部品牌 */}
-        <div className="mt-8 text-center">
-          <p className="text-slate-500 text-sm">玲姐假发 · 专业假发定制</p>
+        {/* 底部 */}
+        <div className="mt-8 text-center space-y-2">
+          <p className="text-slate-500 text-xs">
+            最后更新: {lastUpdate.toLocaleTimeString()}
+          </p>
+          <p className="text-slate-600 text-sm">玲姐假发 · 专业假发定制</p>
         </div>
       </div>
     </div>
