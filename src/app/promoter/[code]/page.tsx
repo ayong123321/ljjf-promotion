@@ -61,7 +61,9 @@ export default function PromoterPage() {
       const result = await res.json();
       if (result.data) {
         setData(result.data);
-        const promotionUrl = `${window.location.origin}/p/${code}`;
+        // 使用正式域名生成二维码
+        const domain = process.env.NEXT_PUBLIC_COZE_PROJECT_DOMAIN_DEFAULT || window.location.origin;
+        const promotionUrl = `${domain}/p/${code}`;
         setQrCodeUrl(`/api/qrcode?url=${encodeURIComponent(promotionUrl)}`);
       } else {
         toast.error(result.error || '获取数据失败');
@@ -74,7 +76,9 @@ export default function PromoterPage() {
   };
 
   const copyPromotionLink = () => {
-    const url = `${window.location.origin}/p/${code}`;
+    // 使用正式域名
+    const domain = process.env.NEXT_PUBLIC_COZE_PROJECT_DOMAIN_DEFAULT || window.location.origin;
+    const url = `${domain}/p/${code}`;
     navigator.clipboard.writeText(url);
     setCopied(true);
     toast.success('推广链接已复制！');

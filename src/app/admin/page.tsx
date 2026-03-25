@@ -265,10 +265,10 @@ export default function AdminPage() {
   };
 
   const getPromotionUrl = (code: string) => {
-    if (typeof window !== 'undefined') {
-      return `${window.location.origin}/p/${code}`;
-    }
-    return `/p/${code}`;
+    // 优先使用环境变量中的正式域名（生产环境）
+    const domain = process.env.NEXT_PUBLIC_COZE_PROJECT_DOMAIN_DEFAULT || 
+                   (typeof window !== 'undefined' ? window.location.origin : '');
+    return `${domain}/p/${code}`;
   };
 
   return (
