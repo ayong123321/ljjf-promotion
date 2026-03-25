@@ -128,7 +128,7 @@ export default function QuickStartPage() {
                 <div className="flex justify-center">
                   <div className="border rounded-lg p-4 bg-white">
                     <img 
-                      src={`${baseUrl}/api/qrcode?url=${encodeURIComponent(`${baseUrl}/p/6OAQBQ92`)}`}
+                      src={`${baseUrl}/api/promoter/6OAQBQ92/qrcode`}
                       alt="示例二维码"
                       className="w-40 h-40"
                     />
