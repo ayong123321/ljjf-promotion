@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'next/navigation';
 
 interface VisitorRecord {
@@ -34,26 +34,50 @@ export default function PromoterDashboard() {
     addedCount: 0,
     dealedCount: 0
   });
+  const [prevStats, setPrevStats] = useState<Stats | null>(null);
   const [visitors, setVisitors] = useState<VisitorRecord[]>([]);
   const [activeTab, setActiveTab] = useState<'stats' | 'visitors'>('stats');
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [highlightKey, setHighlightKey] = useState(0);
+  const prevStatsRef = useRef<Stats | null>(null);
 
   const fetchPromoterData = useCallback(async (isInitial = false) => {
+    if (!isInitial) {
+      setIsUpdating(true);
+    }
+    
     try {
-      const res = await fetch(`/api/promoter/${code}`);
+      const res = await fetch(`/api/promoter/${code}`, { 
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' }
+      });
       const data = await res.json();
       
       if (data.data) {
+        // 保存旧数据用于对比
+        prevStatsRef.current = stats;
+        
         setPromoter(data.data.promoter);
-        setStats({
+        const newStats = {
           totalVisitors: data.data.stats.totalVisits,
           uniqueVisitors: data.data.stats.uniqueVisitors,
           wechatSubmissions: data.data.stats.wechatSubmissions,
           addedCount: data.data.stats.addedCount || 0,
           dealedCount: data.data.stats.dealedCount || 0
-        });
+        };
         
-        const visitorsRes = await fetch(`/api/promoter/${code}/visitors`);
+        // 检测数据变化
+        if (JSON.stringify(newStats) !== JSON.stringify(stats)) {
+          setPrevStats(stats);
+          setStats(newStats);
+          setHighlightKey(k => k + 1);
+        }
+        
+        const visitorsRes = await fetch(`/api/promoter/${code}/visitors`, {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache' }
+        });
         const visitorsData = await visitorsRes.json();
         if (visitorsData.success) {
           setVisitors(visitorsData.data || []);
@@ -64,22 +88,21 @@ export default function PromoterDashboard() {
     } catch (e) {
       console.error(e);
     } finally {
-      if (isInitial) {
-        setLoading(false);
-      }
+      setLoading(false);
+      setIsUpdating(false);
     }
-  }, [code]);
+  }, [code, stats]);
 
   // 初始加载
   useEffect(() => {
     fetchPromoterData(true);
-  }, [fetchPromoterData]);
+  }, [code]);
 
-  // 实时更新：每5秒轮询一次
+  // 实时更新：每3秒轮询一次
   useEffect(() => {
     const interval = setInterval(() => {
       fetchPromoterData(false);
-    }, 5000);
+    }, 3000);
 
     return () => clearInterval(interval);
   }, [fetchPromoterData]);
@@ -100,6 +123,12 @@ export default function PromoterDashboard() {
     return date.toLocaleDateString();
   };
 
+  // 检查数据是否变化
+  const hasChanged = (key: keyof Stats) => {
+    if (!prevStats) return false;
+    return prevStats[key] !== stats[key];
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-900 flex items-center justify-center">
@@ -118,7 +147,7 @@ export default function PromoterDashboard() {
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-900">
       <div className="max-w-md mx-auto px-4 py-5">
         
-        {/* 头部：推广者信息 */}
+        {/* 头部：推广者信息 + 实时状态 */}
         <div className="mb-5">
           <div className="flex items-center gap-4 mb-4">
             {/* 头像 */}
@@ -136,6 +165,21 @@ export default function PromoterDashboard() {
                 <span className="text-white font-mono text-base tracking-wider font-semibold bg-white/10 px-2 py-0.5 rounded">{code}</span>
               </div>
             </div>
+          </div>
+          
+          {/* 实时状态指示器 */}
+          <div className="flex items-center justify-center gap-2 text-sm">
+            {isUpdating ? (
+              <div className="flex items-center gap-2 text-emerald-400">
+                <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+                <span>正在更新...</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-slate-400">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                <span>实时更新中 · 每3秒刷新</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -170,16 +214,16 @@ export default function PromoterDashboard() {
 
         {/* 统计数据 */}
         {activeTab === 'stats' && (
-          <div className="space-y-4">
+          <div className="space-y-4" key={highlightKey}>
             
             {/* 核心指标：留微信数 - 最大最醒目 */}
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-500 via-orange-500 to-rose-500 p-6 shadow-xl shadow-orange-500/30">
+            <div className={`relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-500 via-orange-500 to-rose-500 p-6 shadow-xl shadow-orange-500/30 transition-all duration-500 ${hasChanged('wechatSubmissions') ? 'ring-4 ring-white/50 scale-105' : ''}`}>
               <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
               <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2"></div>
               <div className="relative flex items-center justify-between">
                 <div>
                   <p className="text-white/80 text-base font-medium mb-2">留微信数</p>
-                  <p className="text-6xl font-bold text-white">{stats.wechatSubmissions}</p>
+                  <p className="text-6xl font-bold text-white transition-all duration-300">{stats.wechatSubmissions}</p>
                 </div>
                 <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center">
                   <svg className="w-9 h-9 text-white" fill="currentColor" viewBox="0 0 24 24">
@@ -192,7 +236,7 @@ export default function PromoterDashboard() {
             {/* 两列数据 */}
             <div className="grid grid-cols-2 gap-3">
               {/* 总访问 */}
-              <div className="rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 p-5 shadow-lg shadow-cyan-500/25">
+              <div className={`rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 p-5 shadow-lg shadow-cyan-500/25 transition-all duration-500 ${hasChanged('totalVisitors') ? 'ring-2 ring-white/50' : ''}`}>
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
                     <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -202,11 +246,11 @@ export default function PromoterDashboard() {
                   </div>
                   <span className="text-white/80 text-sm">总访问</span>
                 </div>
-                <p className="text-4xl font-bold text-white">{stats.totalVisitors}</p>
+                <p className="text-4xl font-bold text-white transition-all duration-300">{stats.totalVisitors}</p>
               </div>
 
               {/* 独立访客 */}
-              <div className="rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 p-5 shadow-lg shadow-emerald-500/25">
+              <div className={`rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 p-5 shadow-lg shadow-emerald-500/25 transition-all duration-500 ${hasChanged('uniqueVisitors') ? 'ring-2 ring-white/50' : ''}`}>
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
                     <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -215,14 +259,14 @@ export default function PromoterDashboard() {
                   </div>
                   <span className="text-white/80 text-sm">独立访客</span>
                 </div>
-                <p className="text-4xl font-bold text-white">{stats.uniqueVisitors}</p>
+                <p className="text-4xl font-bold text-white transition-all duration-300">{stats.uniqueVisitors}</p>
               </div>
             </div>
 
             {/* 成交数据 */}
             <div className="grid grid-cols-2 gap-3">
               {/* 已添加 */}
-              <div className="rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 p-5 shadow-lg shadow-violet-500/25">
+              <div className={`rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 p-5 shadow-lg shadow-violet-500/25 transition-all duration-500 ${hasChanged('addedCount') ? 'ring-2 ring-white/50' : ''}`}>
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
                     <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -231,11 +275,11 @@ export default function PromoterDashboard() {
                   </div>
                   <span className="text-white/80 text-sm">已添加</span>
                 </div>
-                <p className="text-4xl font-bold text-white">{stats.addedCount}</p>
+                <p className="text-4xl font-bold text-white transition-all duration-300">{stats.addedCount}</p>
               </div>
 
               {/* 已成交 */}
-              <div className="rounded-2xl bg-gradient-to-br from-rose-500 to-pink-600 p-5 shadow-lg shadow-rose-500/25">
+              <div className={`rounded-2xl bg-gradient-to-br from-rose-500 to-pink-600 p-5 shadow-lg shadow-rose-500/25 transition-all duration-500 ${hasChanged('dealedCount') ? 'ring-2 ring-white/50' : ''}`}>
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
                     <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -244,7 +288,7 @@ export default function PromoterDashboard() {
                   </div>
                   <span className="text-white/80 text-sm">已成交</span>
                 </div>
-                <p className="text-4xl font-bold text-white">{stats.dealedCount}</p>
+                <p className="text-4xl font-bold text-white transition-all duration-300">{stats.dealedCount}</p>
               </div>
             </div>
 
@@ -287,7 +331,7 @@ export default function PromoterDashboard() {
               visitors.filter(v => v.hasWechat).map((v, index) => (
                 <div 
                   key={v.id} 
-                  className={`rounded-2xl p-4 ${
+                  className={`rounded-2xl p-4 transition-all duration-300 ${
                     v.status === 'dealed' 
                       ? 'bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border border-emerald-500/30' 
                       : v.status === 'added' 
