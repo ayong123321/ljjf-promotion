@@ -308,7 +308,6 @@ export default function AdminPage() {
         {qrcodePromoter && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setQrcodePromoter(null)}>
             <div className="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full" onClick={e => e.stopPropagation()}>
-              <h3 className="text-xl font-bold mb-4 text-center">{qrcodePromoter.name} 的推广二维码</h3>
               <div className="bg-white p-4 flex justify-center">
                 <img 
                   src={`/api/qrcode?url=${encodeURIComponent(getPromotionUrl(qrcodePromoter.code))}`} 
@@ -316,8 +315,6 @@ export default function AdminPage() {
                   className="w-48 h-48 md:w-64 md:h-64"
                 />
               </div>
-              <p className="text-center text-gray-600 mt-2">推广码: {qrcodePromoter.code}</p>
-              <p className="text-center text-sm text-gray-500 mt-1">扫码访问推广页面</p>
               <div className="mt-4 flex gap-2">
                 <button 
                   onClick={() => copyToClipboard(getPromotionUrl(qrcodePromoter.code))}
