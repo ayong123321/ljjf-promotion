@@ -31,10 +31,17 @@ export async function GET(
     const base64Data = qrCodeDataUrl.replace(/^data:image\/png;base64,/, '');
     const buffer = Buffer.from(base64Data, 'base64');
 
+    // 使用时间戳参数防止缓存
+    const timestamp = Date.now();
+    
     return new NextResponse(buffer, {
       headers: {
         'Content-Type': 'image/png',
-        'Cache-Control': 'public, max-age=86400',
+        // 禁用缓存，确保每次都生成新的二维码
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'X-Content-Timestamp': timestamp.toString(),
       },
     });
   } catch (error) {
