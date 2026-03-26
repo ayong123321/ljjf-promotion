@@ -129,16 +129,21 @@ export async function PUT(request: NextRequest) {
         .from('visitor_records')
         .update({ wechat_id: wechatId })
         .eq('id', recordId)
-        .select()
-        .single();
+        .select();
 
       if (error) {
         console.error('[PUT] 更新失败:', error);
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
-      console.log('[PUT] 更新成功:', data);
-      return NextResponse.json({ data });
+      // 返回第一条记录
+      const updatedRecord = data?.[0];
+      if (!updatedRecord) {
+        return NextResponse.json({ error: '更新失败，记录不存在' }, { status: 404 });
+      }
+
+      console.log('[PUT] 更新成功:', updatedRecord);
+      return NextResponse.json({ data: updatedRecord });
     }
 
     // 使用 promoterCode + IP 查找或创建
@@ -175,25 +180,25 @@ export async function PUT(request: NextRequest) {
       // 找到记录，更新
       if (existingRecords && existingRecords.length > 0) {
         const existingId = existingRecords[0].id;
-        const { data: updated, error: updateError } = await client
+        const { data: updatedRecords, error: updateError } = await client
           .from('visitor_records')
           .update({ wechat_id: wechatId })
           .eq('id', existingId)
-          .select()
-          .single();
+          .select();
 
         if (updateError) {
           console.error('[PUT] 更新失败:', updateError);
           return NextResponse.json({ error: updateError.message }, { status: 500 });
         }
 
+        const updated = updatedRecords?.[0];
         console.log('[PUT] 更新成功:', updated);
         return NextResponse.json({ data: updated });
       }
 
       // 没有找到记录，创建新记录
       console.log('[PUT] 没找到记录，创建新记录');
-      const { data: newRecord, error: insertError } = await client
+      const { data: newRecords, error: insertError } = await client
         .from('visitor_records')
         .insert({
           promoter_id: promoterId,
@@ -201,8 +206,7 @@ export async function PUT(request: NextRequest) {
           ip_address: ipAddress,
           user_agent: userAgent
         })
-        .select()
-        .single();
+        .select();
 
       if (insertError) {
         console.error('[PUT] 创建失败:', insertError);
@@ -216,21 +220,21 @@ export async function PUT(request: NextRequest) {
           .limit(1);
         
         if (retryRecords && retryRecords.length > 0) {
-          const { data: retryUpdate } = await client
+          const { data: retryUpdateRecords } = await client
             .from('visitor_records')
             .update({ wechat_id: wechatId })
             .eq('id', retryRecords[0].id)
-            .select()
-            .single();
+            .select();
           
-          if (retryUpdate) {
-            return NextResponse.json({ data: retryUpdate });
+          if (retryUpdateRecords && retryUpdateRecords.length > 0) {
+            return NextResponse.json({ data: retryUpdateRecords[0] });
           }
         }
         
         return NextResponse.json({ error: insertError.message }, { status: 500 });
       }
 
+      const newRecord = newRecords?.[0];
       console.log('[PUT] 创建成功:', newRecord);
       return NextResponse.json({ data: newRecord });
     }
