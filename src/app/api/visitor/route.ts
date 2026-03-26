@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
 
     // 无记录则创建
     console.log('[POST] 创建新记录:', { promoterId, ipAddress, wechatId });
-    const { data: newRecord, error: insertError } = await client
+    const { data: newRecords, error: insertError } = await client
       .from('visitor_records')
       .insert({
         promoter_id: promoterId,
@@ -77,8 +77,7 @@ export async function POST(request: NextRequest) {
         ip_address: ipAddress,
         user_agent: userAgent
       })
-      .select()
-      .single();
+      .select();
 
     if (insertError) {
       console.error('[POST] 创建失败:', insertError);
@@ -98,6 +97,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: insertError.message }, { status: 500 });
     }
 
+    const newRecord = newRecords?.[0];
     console.log('[POST] 创建成功:', newRecord);
     return NextResponse.json({ data: newRecord });
   } catch (error) {
