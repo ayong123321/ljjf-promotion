@@ -138,12 +138,13 @@ export async function PUT(request: NextRequest) {
 
       // 返回第一条记录
       const updatedRecord = data?.[0];
-      if (!updatedRecord) {
-        return NextResponse.json({ error: '更新失败，记录不存在' }, { status: 404 });
+      if (updatedRecord) {
+        console.log('[PUT] 更新成功:', updatedRecord);
+        return NextResponse.json({ data: updatedRecord });
       }
-
-      console.log('[PUT] 更新成功:', updatedRecord);
-      return NextResponse.json({ data: updatedRecord });
+      
+      // recordId 对应的记录不存在，继续尝试用 promoterCode 处理
+      console.log('[PUT] recordId 对应的记录不存在，尝试用 promoterCode 处理');
     }
 
     // 使用 promoterCode + IP 查找或创建
