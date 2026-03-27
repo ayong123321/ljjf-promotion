@@ -112,4 +112,29 @@ function getSupabaseClient(token?: string): SupabaseClient {
   });
 }
 
-export { loadEnv, getSupabaseCredentials, getSupabaseClient };
+// 获取 Service Role 客户端（用于 Storage 操作）
+function getSupabaseServiceClient(): SupabaseClient {
+  loadEnv();
+
+  const url = process.env.COZE_SUPABASE_URL;
+  const serviceKey = process.env.COZE_SUPABASE_SERVICE_KEY;
+
+  if (!url) {
+    throw new Error('COZE_SUPABASE_URL is not set');
+  }
+  if (!serviceKey) {
+    throw new Error('COZE_SUPABASE_SERVICE_KEY is not set');
+  }
+
+  return createClient(url, serviceKey, {
+    db: {
+      timeout: 60000,
+    },
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+}
+
+export { loadEnv, getSupabaseCredentials, getSupabaseClient, getSupabaseServiceClient };

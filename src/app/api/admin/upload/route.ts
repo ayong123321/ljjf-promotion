@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseClient } from '@/storage/database/supabase-client';
+import { getSupabaseServiceClient } from '@/storage/database/supabase-client';
 
 export const maxDuration = 300; // 5分钟超时
 
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     console.log(`开始上传文件: ${fileName}, 大小: ${file.size} bytes`);
 
     // 上传到 Supabase Storage
-    const client = getSupabaseClient();
+    const client = getSupabaseServiceClient();
     const bucketName = 'promotions';
     
     const { data, error } = await client.storage

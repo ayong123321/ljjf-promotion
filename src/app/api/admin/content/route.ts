@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseClient } from '@/storage/database/supabase-client';
+import { getSupabaseClient, getSupabaseServiceClient } from '@/storage/database/supabase-client';
 
 // 从文本中提取URL（处理抖音分享文字）
 const extractUrl = (text: string): string | null => {
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '标题不能为空' }, { status: 400 });
     }
 
-    const client = getSupabaseClient();
+    const client = getSupabaseServiceClient();
     const bucketName = 'promotions';
     let imageUrl: string | null = null;
     let videoUrl: string | null = null;
