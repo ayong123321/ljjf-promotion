@@ -193,8 +193,13 @@ export async function PUT(request: NextRequest) {
         }
 
         const updated = updatedRecords?.[0];
-        console.log('[PUT] 更新成功:', updated);
-        return NextResponse.json({ data: updated });
+        if (updated) {
+          console.log('[PUT] 更新成功:', updated);
+          return NextResponse.json({ data: updated });
+        }
+        
+        // 更新返回空，直接创建新记录
+        console.log('[PUT] 更新返回空，创建新记录');
       }
 
       // 没有找到记录，创建新记录
