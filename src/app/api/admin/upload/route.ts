@@ -1,13 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { S3Storage } from 'coze-coding-dev-sdk';
-
-const storage = new S3Storage({
-  endpointUrl: process.env.COZE_BUCKET_ENDPOINT_URL,
-  accessKey: process.env.COZE_BUCKET_ACCESS_KEY || "",
-  secretKey: process.env.COZE_BUCKET_SECRET_KEY || "",
-  bucketName: process.env.COZE_BUCKET_NAME,
-  region: "cn-beijing",
-});
+import { getSupabaseClient } from '@/storage/database/supabase-client';
 
 export const maxDuration = 300; // 5分钟超时
 
@@ -44,7 +36,7 @@ export async function POST(request: NextRequest) {
 
     // 生成文件名
     const ext = file.name.split('.').pop() || 'bin';
-    const fileName = `promotions/${type}s/${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
+    const fileName = `${type}s/${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
 
     // 读取文件内容
     const arrayBuffer = await file.arrayBuffer();
@@ -52,26 +44,37 @@ export async function POST(request: NextRequest) {
 
     console.log(`开始上传文件: ${fileName}, 大小: ${file.size} bytes`);
 
-    // 上传到对象存储
-    const key = await storage.uploadFile({
-      fileContent: buffer,
-      fileName: fileName,
-      contentType: file.type,
-    });
+    // 上传到 Supabase Storage
+    const client = getSupabaseClient();
+    const bucketName = 'promotions';
+    
+    const { data, error } = await client.storage
+      .from(bucketName)
+      .upload(fileName, buffer, {
+        contentType: file.type,
+        upsert: false,
+      });
 
-    console.log(`文件上传成功, key: ${key}`);
+    if (error) {
+      console.error('文件上传失败:', error);
+      return NextResponse.json({ 
+        success: false, 
+        error: `上传失败: ${error.message}` 
+      });
+    }
 
-    // 生成访问 URL（有效期 30 天）
-    const url = await storage.generatePresignedUrl({
-      key: key,
-      expireTime: 30 * 24 * 60 * 60, // 30 天
-    });
+    console.log(`文件上传成功, path: ${data.path}`);
+
+    // 生成公开访问 URL
+    const { data: urlData } = client.storage
+      .from(bucketName)
+      .getPublicUrl(data.path);
 
     return NextResponse.json({ 
       success: true, 
       data: { 
-        key: key,
-        url: url 
+        key: data.path,
+        url: urlData.publicUrl 
       } 
     });
   } catch (error) {

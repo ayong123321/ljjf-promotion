@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
-import { S3Storage } from 'coze-coding-dev-sdk';
 
 // 从文本中提取URL（处理抖音分享文字）
 const extractUrl = (text: string): string | null => {
@@ -41,15 +40,6 @@ const extractUrl = (text: string): string | null => {
   const urlMatch = trimmed.match(/https?:\/\/[a-zA-Z0-9\-._~:/?#[\]@!$&'()*+,;=%]+/);
   return urlMatch ? urlMatch[0] : null;
 };
-
-// 初始化对象存储
-const storage = new S3Storage({
-  endpointUrl: process.env.COZE_BUCKET_ENDPOINT_URL,
-  accessKey: process.env.COZE_BUCKET_ACCESS_KEY || "",
-  secretKey: process.env.COZE_BUCKET_SECRET_KEY || "",
-  bucketName: process.env.COZE_BUCKET_NAME,
-  region: "cn-beijing",
-});
 
 // 获取推广内容
 export async function GET() {
@@ -93,34 +83,42 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '标题不能为空' }, { status: 400 });
     }
 
+    const client = getSupabaseClient();
+    const bucketName = 'promotions';
     let imageUrl: string | null = null;
     let videoUrl: string | null = null;
     let storeImageUrl: string | null = null;
     let hasNewVideo = false;
 
-    // 如果有上传图片,先上传到对象存储
+    // 如果有上传图片,先上传到 Supabase Storage
     if (imageFile && imageFile.size > 0) {
       try {
         console.log('开始上传图片...', imageFile.name, imageFile.size, 'bytes');
         const buffer = Buffer.from(await imageFile.arrayBuffer());
         
-        // 处理文件名，移除特殊字符和中文
+        // 处理文件名
         const originalName = imageFile.name;
         const ext = originalName.split('.').pop() || 'jpg';
-        const safeFileName = `image_${Date.now()}.${ext}`;
-        const fileName = `promotions/${safeFileName}`;
-        console.log('原始文件名:', originalName, '-> 安全文件名:', fileName);
+        const safeFileName = `images/image_${Date.now()}.${ext}`;
+        console.log('原始文件名:', originalName, '-> 安全文件名:', safeFileName);
         
-        const imageKey = await storage.uploadFile({
-          fileContent: buffer,
-          fileName: fileName,
-          contentType: imageFile.type,
-        });
+        const { data, error } = await client.storage
+          .from(bucketName)
+          .upload(safeFileName, buffer, {
+            contentType: imageFile.type,
+            upsert: false,
+          });
 
-        imageUrl = await storage.generatePresignedUrl({
-          key: imageKey,
-          expireTime: 31536000, // 1年有效期
-        });
+        if (error) {
+          throw error;
+        }
+
+        // 生成公开访问 URL
+        const { data: urlData } = client.storage
+          .from(bucketName)
+          .getPublicUrl(data.path);
+        
+        imageUrl = urlData.publicUrl;
         console.log('图片上传成功:', imageUrl?.substring(0, 80));
       } catch (uploadError) {
         console.error('图片上传失败:', uploadError);
@@ -130,7 +128,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 如果有上传门店图片,上传到对象存储
+    // 如果有上传门店图片,上传到 Supabase Storage
     if (storeImageFile && storeImageFile.size > 0) {
       try {
         console.log('开始上传门店图片...', storeImageFile.name, storeImageFile.size, 'bytes');
@@ -138,19 +136,24 @@ export async function POST(request: NextRequest) {
         
         const originalName = storeImageFile.name;
         const ext = originalName.split('.').pop() || 'jpg';
-        const safeFileName = `store_${Date.now()}.${ext}`;
-        const fileName = `promotions/${safeFileName}`;
+        const safeFileName = `stores/store_${Date.now()}.${ext}`;
         
-        const storeImageKey = await storage.uploadFile({
-          fileContent: buffer,
-          fileName: fileName,
-          contentType: storeImageFile.type,
-        });
+        const { data, error } = await client.storage
+          .from(bucketName)
+          .upload(safeFileName, buffer, {
+            contentType: storeImageFile.type,
+            upsert: false,
+          });
 
-        storeImageUrl = await storage.generatePresignedUrl({
-          key: storeImageKey,
-          expireTime: 31536000,
-        });
+        if (error) {
+          throw error;
+        }
+
+        const { data: urlData } = client.storage
+          .from(bucketName)
+          .getPublicUrl(data.path);
+        
+        storeImageUrl = urlData.publicUrl;
         console.log('门店图片上传成功:', storeImageUrl?.substring(0, 80));
       } catch (uploadError) {
         console.error('门店图片上传失败:', uploadError);
@@ -160,31 +163,35 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 如果有上传视频,上传到对象存储
+    // 如果有上传视频,上传到 Supabase Storage
     if (videoFile && videoFile.size > 0) {
       try {
         console.log('开始上传视频...', videoFile.name, videoFile.size, 'bytes');
         const buffer = Buffer.from(await videoFile.arrayBuffer());
         console.log('视频buffer创建完成, 大小:', buffer.length);
         
-        // 处理文件名，移除特殊字符和中文，只保留字母数字和扩展名
+        // 处理文件名
         const originalName = videoFile.name;
         const ext = originalName.split('.').pop() || 'mp4';
-        const safeFileName = `video_${Date.now()}.${ext}`;
-        const fileName = `videos/${safeFileName}`;
-        console.log('原始文件名:', originalName, '-> 安全文件名:', fileName);
+        const safeFileName = `videos/video_${Date.now()}.${ext}`;
+        console.log('原始文件名:', originalName, '-> 安全文件名:', safeFileName);
         
-        const videoKey = await storage.uploadFile({
-          fileContent: buffer,
-          fileName: fileName,
-          contentType: videoFile.type || 'video/mp4',
-        });
-        console.log('上传完成, 返回key:', videoKey);
+        const { data, error } = await client.storage
+          .from(bucketName)
+          .upload(safeFileName, buffer, {
+            contentType: videoFile.type || 'video/mp4',
+            upsert: false,
+          });
 
-        videoUrl = await storage.generatePresignedUrl({
-          key: videoKey,
-          expireTime: 31536000, // 1年有效期
-        });
+        if (error) {
+          throw error;
+        }
+
+        const { data: urlData } = client.storage
+          .from(bucketName)
+          .getPublicUrl(data.path);
+        
+        videoUrl = urlData.publicUrl;
         hasNewVideo = true;
         console.log('视频URL生成成功:', videoUrl?.substring(0, 80));
       } catch (uploadError) {
@@ -204,8 +211,6 @@ export async function POST(request: NextRequest) {
         console.log('无法从输入中提取有效URL:', videoUrlInput);
       }
     }
-
-    const client = getSupabaseClient();
 
     if (id) {
       // 更新现有内容
