@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { uploadToSupabaseStorage } from '@/lib/supabase-browser';
 
@@ -65,6 +65,10 @@ export default function AdminPage() {
   // 筛选条件
   const [filterPromoter, setFilterPromoter] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  
+  // 实时更新
+  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     if (activeTab === 'promoters') fetchPromoters();
@@ -73,38 +77,55 @@ export default function AdminPage() {
     else if (activeTab === 'visitorList') fetchVisitorRecords();
   }, [activeTab]);
 
-  const fetchPromoters = async () => {
-    setLoading(true);
+  // 实时更新：每5秒轮询一次
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIsUpdating(true);
+      if (activeTab === 'promoters') fetchPromoters(true);
+      else if (activeTab === 'contents') fetchContents(true);
+      else if (activeTab === 'visitors') fetchPromoterStats(true);
+      else if (activeTab === 'visitorList') fetchVisitorRecords(true);
+      setLastUpdate(new Date());
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [activeTab, filterPromoter, filterStatus]);
+
+  const fetchPromoters = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
-      const res = await fetch('/api/admin/promoters');
+      const res = await fetch('/api/admin/promoters', { cache: 'no-store' });
       const data = await res.json();
       if (data.success) setPromoters(data.data || []);
     } catch (e) { console.error(e); }
-    setLoading(false);
+    if (!silent) setLoading(false);
+    else setIsUpdating(false);
   };
 
-  const fetchContents = async () => {
-    setLoading(true);
+  const fetchContents = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
-      const res = await fetch('/api/admin/contents');
+      const res = await fetch('/api/admin/contents', { cache: 'no-store' });
       const data = await res.json();
       if (data.success) setContents(data.data || []);
     } catch (e) { console.error(e); }
-    setLoading(false);
+    if (!silent) setLoading(false);
+    else setIsUpdating(false);
   };
 
-  const fetchPromoterStats = async () => {
-    setLoading(true);
+  const fetchPromoterStats = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
-      const res = await fetch('/api/admin/promoter-stats');
+      const res = await fetch('/api/admin/promoter-stats', { cache: 'no-store' });
       const data = await res.json();
       if (data.success) setPromoterStats(data.data || []);
     } catch (e) { console.error(e); }
-    setLoading(false);
+    if (!silent) setLoading(false);
+    else setIsUpdating(false);
   };
 
-  const fetchVisitorRecords = async () => {
-    setLoading(true);
+  const fetchVisitorRecords = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       let url = '/api/admin/visitors';
       const params = new URLSearchParams();
@@ -112,11 +133,12 @@ export default function AdminPage() {
       if (filterStatus) params.append('status', filterStatus);
       if (params.toString()) url += '?' + params.toString();
       
-      const res = await fetch(url);
+      const res = await fetch(url, { cache: 'no-store' });
       const data = await res.json();
       if (data.success) setVisitorRecords(data.data || []);
     } catch (e) { console.error(e); }
-    setLoading(false);
+    if (!silent) setLoading(false);
+    else setIsUpdating(false);
   };
 
   // 筛选变化时重新获取
@@ -277,7 +299,23 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-2xl md:text-3xl font-bold mb-6">管理后台</h1>
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
+          <h1 className="text-2xl md:text-3xl font-bold">管理后台</h1>
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            {isUpdating ? (
+              <div className="flex items-center gap-2 text-blue-500">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                <span>正在更新...</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-green-600">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span>实时更新中 · 每5秒刷新</span>
+              </div>
+            )}
+            <span className="text-gray-400 ml-2">最后更新: {lastUpdate.toLocaleTimeString()}</span>
+          </div>
+        </div>
         
         {/* 标签导航 */}
         <div className="flex gap-2 mb-6 flex-wrap">
