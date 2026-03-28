@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { uploadToSupabaseStorage } from '@/lib/supabase-browser';
 
 interface Promoter {
   id: string;
@@ -147,44 +148,27 @@ export default function AdminPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // 检查文件大小
-    const maxSize = newContent.type === 'image' ? 10 * 1024 * 1024 : 100 * 1024 * 1024;
+    // 检查文件大小（图片 10MB，视频 50MB）
+    const maxSize = newContent.type === 'image' ? 10 * 1024 * 1024 : 50 * 1024 * 1024;
     if (file.size > maxSize) {
-      alert(`文件太大，${newContent.type === 'image' ? '图片' : '视频'}最大支持 ${newContent.type === 'image' ? '10MB' : '100MB'}`);
+      alert(`文件太大，${newContent.type === 'image' ? '图片' : '视频'}最大支持 ${newContent.type === 'image' ? '10MB' : '50MB'}`);
       return;
     }
 
     setUploading(true);
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('type', newContent.type);
-
-      // 创建 AbortController 用于超时控制
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5 * 60 * 1000); // 5分钟超时
-
-      const res = await fetch('/api/admin/upload', {
-        method: 'POST',
-        body: formData,
-        signal: controller.signal
-      });
+      // 直接上传到 Supabase Storage（绕过 Vercel 函数限制）
+      const result = await uploadToSupabaseStorage(file, newContent.type);
       
-      clearTimeout(timeoutId);
-      const data = await res.json();
-      
-      if (data.success) {
-        setNewContent({ ...newContent, url: data.data.url });
+      if (result.success && result.url) {
+        setNewContent({ ...newContent, url: result.url });
         alert('上传成功！');
       } else {
-        alert('上传失败：' + data.error);
+        alert('上传失败：' + (result.error || '未知错误'));
       }
     } catch (e) {
-      if (e instanceof Error && e.name === 'AbortError') {
-        alert('上传超时，请检查网络后重试');
-      } else {
-        alert('上传失败，请重试');
-      }
+      console.error('上传异常:', e);
+      alert('上传失败，请重试');
     } finally {
       setUploading(false);
       if (fileInputRef.current) {
@@ -592,7 +576,7 @@ export default function AdminPage() {
                       <p className="text-xs text-gray-500 mt-1">
                         {newContent.type === 'image' 
                           ? '支持 JPG、PNG、GIF、WebP，最大 10MB' 
-                          : '支持 MP4、MOV、AVI、WebM，最大 100MB'}
+                          : '支持 MP4、MOV、AVI、WebM，最大 50MB'}
                       </p>
                     </div>
                   )}

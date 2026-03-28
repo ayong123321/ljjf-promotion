@@ -3,7 +3,8 @@ import { createClient } from '@supabase/supabase-js';
 
 function getSupabaseClient() {
   const url = process.env.COZE_SUPABASE_URL;
-  const key = process.env.COZE_SUPABASE_ANON_KEY;
+  // 使用 SERVICE_KEY 以绕过 RLS
+  const key = process.env.COZE_SUPABASE_SERVICE_KEY || process.env.COZE_SUPABASE_ANON_KEY;
   
   if (!url || !key) {
     throw new Error('Supabase 环境变量未配置');
