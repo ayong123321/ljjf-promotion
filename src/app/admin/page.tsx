@@ -67,8 +67,14 @@ export default function AdminPage() {
   const [filterStatus, setFilterStatus] = useState('');
   
   // 实时更新
-  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const [lastUpdate, setLastUpdate] = useState<string>('');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    setLastUpdate(new Date().toLocaleTimeString());
+  }, []);
 
   useEffect(() => {
     if (activeTab === 'promoters') fetchPromoters();
@@ -85,7 +91,7 @@ export default function AdminPage() {
       else if (activeTab === 'contents') fetchContents(true);
       else if (activeTab === 'visitors') fetchPromoterStats(true);
       else if (activeTab === 'visitorList') fetchVisitorRecords(true);
-      setLastUpdate(new Date());
+      setLastUpdate(new Date().toLocaleTimeString());
     }, 5000);
 
     return () => clearInterval(interval);
@@ -313,7 +319,7 @@ export default function AdminPage() {
                 <span>实时更新中 · 每5秒刷新</span>
               </div>
             )}
-            <span className="text-gray-400 ml-2">最后更新: {lastUpdate.toLocaleTimeString()}</span>
+            <span className="text-gray-400 ml-2">最后更新: {lastUpdate || '--:--:--'}</span>
           </div>
         </div>
         
