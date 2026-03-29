@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-function getSupabaseClient() {
+// 获取管理后台用的 Supabase 客户端（使用 SERVICE_KEY 绕过 RLS）
+function getAdminClient() {
   const url = process.env.COZE_SUPABASE_URL;
-  // 使用 SERVICE_KEY 以绕过 RLS
-  const key = process.env.COZE_SUPABASE_SERVICE_KEY || process.env.COZE_SUPABASE_ANON_KEY;
+  const key = process.env.COZE_SUPABASE_SERVICE_KEY;
   
   if (!url || !key) {
     throw new Error('Supabase 环境变量未配置');
@@ -16,7 +16,7 @@ function getSupabaseClient() {
 // GET - 获取内容列表
 export async function GET() {
   try {
-    const client = getSupabaseClient();
+    const client = getAdminClient();
     const { data, error } = await client
       .from('promotion_contents')
       .select('*')
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: '类型必须是 image 或 video' });
     }
 
-    const client = getSupabaseClient();
+    const client = getAdminClient();
     
     // 根据类型存储到不同字段
     const insertData: Record<string, unknown> = {
@@ -128,7 +128,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ success: false, error: '缺少ID' });
     }
 
-    const client = getSupabaseClient();
+    const client = getAdminClient();
     const { error } = await client
       .from('promotion_contents')
       .delete()

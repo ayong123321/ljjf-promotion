@@ -14,7 +14,7 @@ function generateCode(): string {
 export async function GET() {
   try {
     const url = process.env.COZE_SUPABASE_URL;
-    const key = process.env.COZE_SUPABASE_ANON_KEY;
+    const key = process.env.COZE_SUPABASE_SERVICE_KEY;
     
     if (!url || !key) {
       return NextResponse.json({ error: 'Supabase 环境变量未配置' });
@@ -75,7 +75,7 @@ export async function GET() {
 export async function POST() {
   try {
     const url = process.env.COZE_SUPABASE_URL;
-    const key = process.env.COZE_SUPABASE_ANON_KEY;
+    const key = process.env.COZE_SUPABASE_SERVICE_KEY;
     
     if (!url || !key) {
       return NextResponse.json({ error: 'Supabase 环境变量未配置' });

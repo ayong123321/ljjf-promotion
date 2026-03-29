@@ -4,9 +4,10 @@ import { createClient } from '@supabase/supabase-js';
 // 禁用缓存
 export const dynamic = 'force-dynamic';
 
+// 获取 Supabase 客户端（使用 SERVICE_KEY 绕过 RLS）
 function getSupabaseClient() {
   const url = process.env.COZE_SUPABASE_URL;
-  const key = process.env.COZE_SUPABASE_ANON_KEY;
+  const key = process.env.COZE_SUPABASE_SERVICE_KEY;
   if (!url || !key) throw new Error('Supabase 环境变量未配置');
   return createClient(url, key);
 }
