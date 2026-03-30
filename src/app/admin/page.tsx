@@ -4,6 +4,9 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { uploadToSupabaseStorage } from '@/lib/supabase-browser';
 
+// 管理后台密码（可以自己修改）
+const ADMIN_PASSWORD = 'ljjf2024';
+
 interface Promoter {
   id: string;
   name: string;
@@ -42,6 +45,11 @@ interface PromoterStats {
 }
 
 export default function AdminPage() {
+  // 密码验证
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  
   const [activeTab, setActiveTab] = useState<'promoters' | 'contents' | 'visitors' | 'visitorList'>('promoters');
   const [promoters, setPromoters] = useState<Promoter[]>([]);
   const [contents, setContents] = useState<Content[]>([]);
@@ -301,6 +309,50 @@ export default function AdminPage() {
       alert('下载二维码失败');
     }
   };
+
+  // 密码验证
+  const handleLogin = () => {
+    if (passwordInput === ADMIN_PASSWORD) {
+      setIsAuthenticated(true);
+      setPasswordError('');
+    } else {
+      setPasswordError('密码错误');
+    }
+  };
+
+  // 未登录显示密码锁
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-lg shadow-lg max-w-sm w-full">
+          <div className="text-center mb-6">
+            <div className="text-4xl mb-4">🔒</div>
+            <h1 className="text-xl font-bold text-gray-800">管理后台</h1>
+            <p className="text-gray-500 text-sm mt-2">请输入密码访问</p>
+          </div>
+          <div className="space-y-4">
+            <input
+              type="password"
+              value={passwordInput}
+              onChange={(e) => setPasswordInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+              placeholder="请输入密码"
+              className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            {passwordError && (
+              <p className="text-red-500 text-sm text-center">{passwordError}</p>
+            )}
+            <button
+              onClick={handleLogin}
+              className="w-full bg-blue-500 text-white py-3 rounded-lg font-medium hover:bg-blue-600 transition-colors"
+            >
+              进入后台
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
