@@ -1,17 +1,9 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-// 获取管理后台用的 Supabase 客户端（使用 SERVICE_KEY 绕过 RLS）
-function getAdminClient() {
-  const url = process.env.COZE_SUPABASE_URL;
-  const key = process.env.COZE_SUPABASE_SERVICE_KEY;
-  if (!url || !key) throw new Error('Supabase 环境变量未配置');
-  return createClient(url, key);
-}
+import { getSupabaseServiceClient } from '@/storage/database/supabase-client';
 
 export async function GET() {
   try {
-    const client = getAdminClient();
+    const client = getSupabaseServiceClient();
     
     // 获取所有访客记录
     const { data: visitors, error } = await client

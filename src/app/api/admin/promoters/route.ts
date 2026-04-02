@@ -1,17 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-// 获取管理后台用的 Supabase 客户端（使用 SERVICE_KEY 绕过 RLS）
-function getAdminClient() {
-  const url = process.env.COZE_SUPABASE_URL;
-  const key = process.env.COZE_SUPABASE_SERVICE_KEY;
-  
-  if (!url || !key) {
-    throw new Error('Supabase 环境变量未配置');
-  }
-  
-  return createClient(url, key);
-}
+import { getSupabaseServiceClient } from '@/storage/database/supabase-client';
 
 // 生成唯一推广码
 function generateCode(): string {
@@ -26,7 +14,7 @@ function generateCode(): string {
 // GET - 获取推广者列表
 export async function GET() {
   try {
-    const client = getAdminClient();
+    const client = getSupabaseServiceClient();
     const { data, error } = await client
       .from('promoters')
       .select('*')
@@ -61,7 +49,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: '姓名不能为空' });
     }
 
-    const client = getAdminClient();
+    const client = getSupabaseServiceClient();
     
     // 生成唯一推广码
     let code = generateCode();
@@ -120,7 +108,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ success: false, error: '缺少ID' });
     }
 
-    const client = getAdminClient();
+    const client = getSupabaseServiceClient();
     const { error } = await client
       .from('promoters')
       .delete()

@@ -1,16 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseServiceClient } from '@/storage/database/supabase-client';
 
 // 禁用缓存
 export const dynamic = 'force-dynamic';
-
-// 获取 Supabase 客户端（使用 SERVICE_KEY 绕过 RLS）
-function getSupabaseClient() {
-  const url = process.env.COZE_SUPABASE_URL;
-  const key = process.env.COZE_SUPABASE_SERVICE_KEY;
-  if (!url || !key) throw new Error('Supabase 环境变量未配置');
-  return createClient(url, key);
-}
 
 // 将数据库状态映射为前端状态
 function mapStatus(dbStatus: string | null): string {
@@ -26,7 +18,7 @@ export async function GET(
 ) {
   try {
     const { code } = await params;
-    const client = getSupabaseClient();
+    const client = getSupabaseServiceClient();
     
     // 先获取推广者ID
     const { data: promoter } = await client

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseServiceClient } from '@/storage/database/supabase-client';
 
 // 生成唯一推广码
 function generateCode(): string {
@@ -13,14 +13,7 @@ function generateCode(): string {
 
 export async function GET() {
   try {
-    const url = process.env.COZE_SUPABASE_URL;
-    const key = process.env.COZE_SUPABASE_SERVICE_KEY;
-    
-    if (!url || !key) {
-      return NextResponse.json({ error: 'Supabase 环境变量未配置' });
-    }
-    
-    const client = createClient(url, key);
+    const client = getSupabaseServiceClient();
     
     // 检查 promoters 表结构
     const { data: promoters, error: promoterError } = await client
@@ -74,14 +67,7 @@ export async function GET() {
 
 export async function POST() {
   try {
-    const url = process.env.COZE_SUPABASE_URL;
-    const key = process.env.COZE_SUPABASE_SERVICE_KEY;
-    
-    if (!url || !key) {
-      return NextResponse.json({ error: 'Supabase 环境变量未配置' });
-    }
-    
-    const client = createClient(url, key);
+    const client = getSupabaseServiceClient();
     
     // 获取所有推广者
     const { data: allPromoters, error: allError } = await client

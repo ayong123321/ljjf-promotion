@@ -1,16 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseServiceClient } from '@/storage/database/supabase-client';
 
 // 禁用缓存
 export const dynamic = 'force-dynamic';
-
-// 获取管理后台用的 Supabase 客户端（使用 SERVICE_KEY 绕过 RLS）
-function getAdminClient() {
-  const url = process.env.COZE_SUPABASE_URL;
-  const key = process.env.COZE_SUPABASE_SERVICE_KEY;
-  if (!url || !key) throw new Error('Supabase 环境变量未配置');
-  return createClient(url, key);
-}
 
 // 将数据库状态映射为前端状态
 function mapStatus(dbStatus: string | null): string {
@@ -31,7 +23,7 @@ function mapStatusToDb(status: string): string {
 // 获取所有访客记录
 export async function GET(request: NextRequest) {
   try {
-    const client = getAdminClient();
+    const client = getSupabaseServiceClient();
     const { searchParams } = new URL(request.url);
     const promoterCode = searchParams.get('promoter_code');
     
@@ -89,7 +81,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ success: false, error: '缺少访客ID' });
     }
     
-    const client = getAdminClient();
+    const client = getSupabaseServiceClient();
     
     // 使用正确的数据库状态值
     const updateData: Record<string, unknown> = {};
