@@ -19,6 +19,9 @@ interface Stats {
   wechatSubmissions: number;
   addedCount: number;
   dealedCount: number;
+  verifiedCount: number; // 已核销数
+  pendingCashback: number; // 待返现金额
+  totalCashback: number; // 已返现金额
 }
 
 export default function PromoterDashboard() {
@@ -32,7 +35,10 @@ export default function PromoterDashboard() {
     uniqueVisitors: 0,
     wechatSubmissions: 0,
     addedCount: 0,
-    dealedCount: 0
+    dealedCount: 0,
+    verifiedCount: 0,
+    pendingCashback: 0,
+    totalCashback: 0
   });
   const [prevStats, setPrevStats] = useState<Stats | null>(null);
   const [visitors, setVisitors] = useState<VisitorRecord[]>([]);
@@ -59,12 +65,23 @@ export default function PromoterDashboard() {
         prevStatsRef.current = stats;
         
         setPromoter(data.data.promoter);
+        
+        // 获取核销和返现统计
+        const cashbackRes = await fetch(`/api/promoter/${code}/cashback`, {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache' }
+        });
+        const cashbackData = await cashbackRes.json();
+        
         const newStats = {
           totalVisitors: data.data.stats.totalVisits,
           uniqueVisitors: data.data.stats.uniqueVisitors,
           wechatSubmissions: data.data.stats.wechatSubmissions,
           addedCount: data.data.stats.addedCount || 0,
-          dealedCount: data.data.stats.dealedCount || 0
+          dealedCount: data.data.stats.dealedCount || 0,
+          verifiedCount: cashbackData.data?.verifiedCount || 0,
+          pendingCashback: cashbackData.data?.pendingCashback || 0,
+          totalCashback: cashbackData.data?.totalCashback || 0
         };
         
         // 检测数据变化
@@ -291,6 +308,35 @@ export default function PromoterDashboard() {
                 <p className="text-4xl font-bold text-white transition-all duration-300">{stats.dealedCount}</p>
               </div>
             </div>
+
+            {/* 核销和返现数据 */}
+            {(stats.verifiedCount > 0 || stats.pendingCashback > 0 || stats.totalCashback > 0) && (
+              <div className="rounded-2xl bg-gradient-to-br from-green-500/20 to-emerald-500/20 border border-green-500/30 p-4">
+                <h3 className="text-green-300 font-semibold mb-3 flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  核销与返现
+                </h3>
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  <div className="bg-white/10 rounded-xl p-3">
+                    <p className="text-white text-2xl font-bold">{stats.verifiedCount}</p>
+                    <p className="text-slate-400 text-xs mt-1">已核销</p>
+                  </div>
+                  <div className="bg-amber-500/20 rounded-xl p-3 border border-amber-500/30">
+                    <p className="text-amber-400 text-2xl font-bold">¥{stats.pendingCashback}</p>
+                    <p className="text-slate-400 text-xs mt-1">待返现</p>
+                  </div>
+                  <div className="bg-green-500/20 rounded-xl p-3 border border-green-500/30">
+                    <p className="text-green-400 text-2xl font-bold">¥{stats.totalCashback}</p>
+                    <p className="text-slate-400 text-xs mt-1">已返现</p>
+                  </div>
+                </div>
+                <p className="text-slate-500 text-xs mt-3 text-center">
+                  返现规则：每3人一轮（100元→200元→700元）
+                </p>
+              </div>
+            )}
 
             {/* 转化率 */}
             {stats.wechatSubmissions > 0 && (

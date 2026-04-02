@@ -50,11 +50,22 @@ export default function AdminPage() {
   const [passwordInput, setPasswordInput] = useState('');
   const [passwordError, setPasswordError] = useState('');
   
-  const [activeTab, setActiveTab] = useState<'promoters' | 'contents' | 'visitors' | 'visitorList'>('promoters');
+  const [activeTab, setActiveTab] = useState<'promoters' | 'contents' | 'visitors' | 'visitorList' | 'cashback'>('promoters');
   const [promoters, setPromoters] = useState<Promoter[]>([]);
   const [contents, setContents] = useState<Content[]>([]);
   const [promoterStats, setPromoterStats] = useState<PromoterStats[]>([]);
   const [visitorRecords, setVisitorRecords] = useState<VisitorRecord[]>([]);
+  const [cashbackRecords, setCashbackRecords] = useState<Array<{
+    id: number;
+    wechat_id: string;
+    verify_code: string;
+    cashback_amount: number;
+    cashback_status: string;
+    cashback_paid_at: string | null;
+    verified_at: string;
+    promoters?: { name: string; unique_code: string };
+  }>>([]);
+  const [cashbackFilter, setCashbackFilter] = useState<'all' | 'pending' | 'paid'>('all');
   const [loading, setLoading] = useState(false);
   const [newPromoter, setNewPromoter] = useState({ name: '', phone: '' });
   const [showAddPromoter, setShowAddPromoter] = useState(false);
@@ -89,6 +100,7 @@ export default function AdminPage() {
     else if (activeTab === 'contents') fetchContents();
     else if (activeTab === 'visitors') fetchPromoterStats();
     else if (activeTab === 'visitorList') fetchVisitorRecords();
+    else if (activeTab === 'cashback') fetchCashbackRecords();
   }, [activeTab]);
 
   // 实时更新：每5秒轮询一次
@@ -99,11 +111,12 @@ export default function AdminPage() {
       else if (activeTab === 'contents') fetchContents(true);
       else if (activeTab === 'visitors') fetchPromoterStats(true);
       else if (activeTab === 'visitorList') fetchVisitorRecords(true);
+      else if (activeTab === 'cashback') fetchCashbackRecords(true);
       setLastUpdate(new Date().toLocaleTimeString());
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [activeTab, filterPromoter, filterStatus]);
+  }, [activeTab, filterPromoter, filterStatus, cashbackFilter]);
 
   const fetchPromoters = async (silent = false) => {
     if (!silent) setLoading(true);
@@ -153,6 +166,59 @@ export default function AdminPage() {
     } catch (e) { console.error(e); }
     if (!silent) setLoading(false);
     else setIsUpdating(false);
+  };
+
+  const fetchCashbackRecords = async (silent = false) => {
+    if (!silent) setLoading(true);
+    try {
+      let url = '/api/admin/cashback';
+      if (cashbackFilter !== 'all') {
+        url += `?status=${cashbackFilter}`;
+      }
+      
+      const res = await fetch(url, { cache: 'no-store' });
+      const data = await res.json();
+      if (data.data) setCashbackRecords(data.data || []);
+    } catch (e) { console.error(e); }
+    if (!silent) setLoading(false);
+    else setIsUpdating(false);
+  };
+
+  // 标记返现已支付
+  const markCashbackPaid = async (recordId: number) => {
+    try {
+      const res = await fetch('/api/admin/cashback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recordId })
+      });
+      const data = await res.json();
+      if (data.data) {
+        fetchCashbackRecords();
+      } else {
+        alert('操作失败：' + data.error);
+      }
+    } catch (e) {
+      alert('操作失败');
+    }
+  };
+
+  // 取消返现
+  const cancelCashback = async (recordId: number) => {
+    if (!confirm('确定要将此记录改回待返现状态？')) return;
+    try {
+      const res = await fetch(`/api/admin/cashback?recordId=${recordId}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (data.data) {
+        fetchCashbackRecords();
+      } else {
+        alert('操作失败：' + data.error);
+      }
+    } catch (e) {
+      alert('操作失败');
+    }
   };
 
   // 筛选变化时重新获取
@@ -400,6 +466,18 @@ export default function AdminPage() {
             className={`px-4 py-2 rounded text-sm md:text-base ${activeTab === 'visitorList' ? 'bg-blue-500 text-white' : 'bg-white'}`}
           >
             访客管理
+          </button>
+          <button 
+            onClick={() => window.open('/admin/verify', '_blank')} 
+            className="px-4 py-2 rounded text-sm md:text-base bg-green-500 text-white hover:bg-green-600"
+          >
+            🔍 门店核销
+          </button>
+          <button 
+            onClick={() => setActiveTab('cashback')} 
+            className={`px-4 py-2 rounded text-sm md:text-base ${activeTab === 'cashback' ? 'bg-orange-500 text-white' : 'bg-orange-100 text-orange-700'}`}
+          >
+            💰 返现管理
           </button>
         </div>
 
@@ -946,6 +1024,109 @@ export default function AdminPage() {
                             </div>
                           ) : (
                             <span className="text-gray-400 text-xs">无微信</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 返现管理 */}
+        {activeTab === 'cashback' && (
+          <div className="bg-white p-4 md:p-6 rounded-lg shadow">
+            <div className="flex flex-wrap gap-4 mb-6 items-center justify-between">
+              <div>
+                <h2 className="text-lg md:text-xl font-semibold">返现管理</h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  待返现: ¥{cashbackRecords.filter(r => r.cashback_status === 'pending').reduce((sum, r) => sum + r.cashback_amount, 0)} | 
+                  已返现: ¥{cashbackRecords.filter(r => r.cashback_status === 'paid').reduce((sum, r) => sum + r.cashback_amount, 0)}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => setCashbackFilter('all')} 
+                  className={`px-3 py-1.5 rounded text-sm ${cashbackFilter === 'all' ? 'bg-gray-800 text-white' : 'bg-gray-100'}`}
+                >
+                  全部
+                </button>
+                <button 
+                  onClick={() => setCashbackFilter('pending')} 
+                  className={`px-3 py-1.5 rounded text-sm ${cashbackFilter === 'pending' ? 'bg-orange-500 text-white' : 'bg-orange-100 text-orange-700'}`}
+                >
+                  待返现 ({cashbackRecords.filter(r => r.cashback_status === 'pending').length})
+                </button>
+                <button 
+                  onClick={() => setCashbackFilter('paid')} 
+                  className={`px-3 py-1.5 rounded text-sm ${cashbackFilter === 'paid' ? 'bg-green-500 text-white' : 'bg-green-100 text-green-700'}`}
+                >
+                  已返现 ({cashbackRecords.filter(r => r.cashback_status === 'paid').length})
+                </button>
+              </div>
+            </div>
+            
+            {loading ? (
+              <p className="text-gray-500">加载中...</p>
+            ) : cashbackRecords.length === 0 ? (
+              <div className="p-8 text-center">
+                <p className="text-gray-500 mb-2">暂无返现记录</p>
+                <p className="text-sm text-gray-400">用户到店核销后会显示在这里</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[700px]">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left">推广者</th>
+                      <th className="px-4 py-3 text-left">用户微信</th>
+                      <th className="px-4 py-3 text-left">核销码</th>
+                      <th className="px-4 py-3 text-center">返现金额</th>
+                      <th className="px-4 py-3 text-center">状态</th>
+                      <th className="px-4 py-3 text-left">核销时间</th>
+                      <th className="px-4 py-3 text-left">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cashbackRecords.map((r) => (
+                      <tr key={r.id} className="border-t hover:bg-gray-50">
+                        <td className="px-4 py-3 font-medium">{r.promoters?.name || '-'}</td>
+                        <td className="px-4 py-3">{r.wechat_id || '-'}</td>
+                        <td className="px-4 py-3">
+                          <code className="bg-gray-100 px-2 py-1 rounded text-sm">{r.verify_code}</code>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className="text-lg font-bold text-orange-600">¥{r.cashback_amount}</span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${
+                            r.cashback_status === 'paid' 
+                              ? 'bg-green-100 text-green-700' 
+                              : 'bg-orange-100 text-orange-700'
+                          }`}>
+                            {r.cashback_status === 'paid' ? '已返现' : '待返现'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-500">
+                          {new Date(r.verified_at).toLocaleString()}
+                        </td>
+                        <td className="px-4 py-3">
+                          {r.cashback_status === 'pending' ? (
+                            <button 
+                              onClick={() => markCashbackPaid(r.id)}
+                              className="bg-green-500 text-white px-3 py-1.5 rounded text-sm hover:bg-green-600"
+                            >
+                              确认返现
+                            </button>
+                          ) : (
+                            <button 
+                              onClick={() => cancelCashback(r.id)}
+                              className="bg-gray-100 text-gray-600 px-3 py-1.5 rounded text-sm hover:bg-gray-200"
+                            >
+                              取消返现
+                            </button>
                           )}
                         </td>
                       </tr>

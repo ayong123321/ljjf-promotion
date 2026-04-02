@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Send, CheckCircle, MapPin, Phone, Copy, Play } from 'lucide-react';
+import { Send, CheckCircle, MapPin, Phone, Copy, Play, Download } from 'lucide-react';
+import QRCode from 'qrcode';
 
 // 检测是否在微信环境
 const isWechat = () => {
@@ -58,6 +59,9 @@ export default function PromotionPage() {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
+  const [verifyCode, setVerifyCode] = useState<string | null>(null);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     recordVisit();
@@ -120,8 +124,15 @@ export default function PromotionPage() {
       
       if (data.data) {
         setSubmitted(true);
-        toast.success('提交成功！我们会尽快联系您');
         setVisitorRecordId(data.data.id);
+        
+        // 如果有核销码，生成二维码
+        if (data.data.verify_code) {
+          setVerifyCode(data.data.verify_code);
+          generateQRCode(data.data.verify_code);
+        }
+        
+        toast.success('提交成功！我们会尽快联系您');
       } else {
         toast.error(data.error || '提交失败，请重试');
       }
@@ -136,6 +147,58 @@ export default function PromotionPage() {
   const copyPhone = (phone: string) => {
     navigator.clipboard.writeText(phone);
     toast.success('电话号码已复制');
+  };
+
+  // 生成二维码
+  const generateQRCode = async (code: string) => {
+    try {
+      // 核销链接
+      const verifyUrl = `${window.location.origin}/verify/${code}`;
+      
+      // 生成二维码到canvas
+      const canvas = canvasRef.current;
+      if (canvas) {
+        await QRCode.toCanvas(canvas, verifyUrl, {
+          width: 200,
+          margin: 2,
+          color: {
+            dark: '#000000',
+            light: '#ffffff'
+          }
+        });
+      }
+      
+      // 生成可下载的DataURL
+      const dataUrl = await QRCode.toDataURL(verifyUrl, {
+        width: 300,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#ffffff'
+        }
+      });
+      setQrCodeUrl(dataUrl);
+    } catch (error) {
+      console.error('生成二维码失败:', error);
+    }
+  };
+
+  // 下载二维码图片
+  const downloadQRCode = () => {
+    if (!qrCodeUrl || !verifyCode) return;
+    
+    const link = document.createElement('a');
+    link.href = qrCodeUrl;
+    link.download = `核销码-${verifyCode}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('二维码已保存');
+  };
+
+  // 长按保存提示
+  const handleLongPressTip = () => {
+    toast.info('长按二维码图片可保存到手机');
   };
 
   if (loading) {
@@ -411,10 +474,43 @@ export default function PromotionPage() {
           </div>
           <CardContent className="p-6">
             {submitted ? (
-              <div className="text-center py-8">
-                <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+              <div className="text-center py-4">
+                <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-3" />
                 <p className="text-lg font-medium text-green-600">提交成功！</p>
-                <p className="text-gray-600 mt-2">我们会尽快联系您，到店记得领取礼品哦～</p>
+                <p className="text-gray-600 mt-1 mb-4">我们会尽快联系您，到店记得领取礼品哦～</p>
+                
+                {/* 核销二维码 */}
+                {verifyCode && (
+                  <div className="mt-4 p-4 bg-gradient-to-br from-pink-50 to-orange-50 rounded-xl border-2 border-pink-200">
+                    <p className="text-sm text-gray-600 mb-3">到店出示以下二维码，可享受专属优惠</p>
+                    
+                    {/* 二维码 */}
+                    <div className="flex justify-center mb-3">
+                      <div className="p-3 bg-white rounded-lg shadow-md">
+                        <canvas ref={canvasRef} className="block"></canvas>
+                      </div>
+                    </div>
+                    
+                    {/* 核销码 */}
+                    <p className="text-xs text-gray-500 mb-3">
+                      核销码：<span className="font-mono font-bold text-pink-600 text-lg">{verifyCode}</span>
+                    </p>
+                    
+                    {/* 保存按钮 */}
+                    {qrCodeUrl && (
+                      <Button
+                        onClick={downloadQRCode}
+                        variant="outline"
+                        className="w-full border-pink-300 text-pink-600 hover:bg-pink-50"
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        保存二维码到手机
+                      </Button>
+                    )}
+                    
+                    <p className="text-xs text-gray-400 mt-2">提示：长按二维码图片也可保存</p>
+                  </div>
+                )}
               </div>
             ) : (
               <form onSubmit={handleSubmitWechat} className="space-y-4">

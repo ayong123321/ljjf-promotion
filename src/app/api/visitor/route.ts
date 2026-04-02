@@ -1,13 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-// 获取 Supabase 客户端（写入操作需要 SERVICE_KEY）
-function getSupabaseClient() {
-  const url = process.env.COZE_SUPABASE_URL;
-  const key = process.env.COZE_SUPABASE_SERVICE_KEY;
-  if (!url || !key) throw new Error('Supabase 环境变量未配置');
-  return createClient(url, key);
-}
+import { getSupabaseServiceClient } from '@/storage/database/supabase-client';
 
 // 获取客户端IP
 function getClientIp(request: NextRequest): string {
@@ -16,6 +8,16 @@ function getClientIp(request: NextRequest): string {
     return forwarded.split(',')[0].trim();
   }
   return request.headers.get('x-real-ip') || 'unknown';
+}
+
+// 生成唯一核销码
+function generateVerifyCode(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code = '';
+  for (let i = 0; i < 8; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
 }
 
 // 记录访客访问（幂等操作：每个推广者+IP只保留一条记录）
@@ -30,7 +32,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '推广码不能为空' }, { status: 400 });
     }
 
-    const client = getSupabaseClient();
+    const client = getSupabaseServiceClient();
     const ipAddress = getClientIp(request);
     const userAgent = request.headers.get('user-agent') || '';
 
@@ -107,7 +109,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// 更新或提交微信号（幂等操作）
+// 更新或提交微信号（幂等操作），提交成功后生成核销码
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
@@ -119,16 +121,22 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: '请输入微信号或手机号' }, { status: 400 });
     }
 
-    const client = getSupabaseClient();
+    const client = getSupabaseServiceClient();
     const ipAddress = getClientIp(request);
     const userAgent = request.headers.get('user-agent') || '';
+
+    // 生成核销码
+    const verifyCode = generateVerifyCode();
 
     // 优先使用 recordId 更新
     if (recordId) {
       console.log('[PUT] 使用 recordId 更新:', recordId);
       const { data, error } = await client
         .from('visitor_records')
-        .update({ wechat_id: wechatId })
+        .update({ 
+          wechat_id: wechatId,
+          verify_code: verifyCode
+        })
         .eq('id', recordId)
         .select();
 
@@ -184,7 +192,10 @@ export async function PUT(request: NextRequest) {
         const existingId = existingRecords[0].id;
         const { data: updatedRecords, error: updateError } = await client
           .from('visitor_records')
-          .update({ wechat_id: wechatId })
+          .update({ 
+            wechat_id: wechatId,
+            verify_code: verifyCode
+          })
           .eq('id', existingId)
           .select();
 
@@ -211,7 +222,8 @@ export async function PUT(request: NextRequest) {
           promoter_id: promoterId,
           wechat_id: wechatId,
           ip_address: ipAddress,
-          user_agent: userAgent
+          user_agent: userAgent,
+          verify_code: verifyCode
         })
         .select();
 
@@ -229,7 +241,10 @@ export async function PUT(request: NextRequest) {
         if (retryRecords && retryRecords.length > 0) {
           const { data: retryUpdateRecords } = await client
             .from('visitor_records')
-            .update({ wechat_id: wechatId })
+            .update({ 
+              wechat_id: wechatId,
+              verify_code: verifyCode
+            })
             .eq('id', retryRecords[0].id)
             .select();
           

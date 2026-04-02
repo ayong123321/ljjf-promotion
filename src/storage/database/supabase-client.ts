@@ -113,20 +113,25 @@ function getSupabaseClient(token?: string): SupabaseClient {
 }
 
 // 获取 Service Role 客户端（用于 Storage 操作）
+// 如果没有 SERVICE_KEY，则使用 ANON_KEY 作为后备
 function getSupabaseServiceClient(): SupabaseClient {
   loadEnv();
 
   const url = process.env.COZE_SUPABASE_URL;
   const serviceKey = process.env.COZE_SUPABASE_SERVICE_KEY;
+  const anonKey = process.env.COZE_SUPABASE_ANON_KEY;
 
   if (!url) {
     throw new Error('COZE_SUPABASE_URL is not set');
   }
-  if (!serviceKey) {
-    throw new Error('COZE_SUPABASE_SERVICE_KEY is not set');
+  
+  // 如果没有 SERVICE_KEY，使用 ANON_KEY 作为后备
+  const key = serviceKey || anonKey;
+  if (!key) {
+    throw new Error('COZE_SUPABASE_SERVICE_KEY or COZE_SUPABASE_ANON_KEY is not set');
   }
 
-  return createClient(url, serviceKey, {
+  return createClient(url, key, {
     db: {
       timeout: 60000,
     },
