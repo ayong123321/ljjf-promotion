@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { CheckCircle, XCircle, Scan, User, Phone, Clock, DollarSign, Loader2 } from 'lucide-react';
+import { CheckCircle, XCircle, Scan, User, Phone, Clock, DollarSign, Loader2, Camera, X } from 'lucide-react';
+import { Html5QrcodeScanner, Html5QrcodeScanType } from 'html5-qrcode';
 
 // 播放滴声
 const playBeep = () => {
@@ -37,6 +38,30 @@ const playBeep = () => {
   }
 };
 
+// 从扫码结果中提取核销码
+const extractVerifyCode = (scannedText: string): string => {
+  // 如果是完整URL，提取最后的核销码
+  // 格式可能是: https://xxx.com/verify/ABCD1234 或 /verify/ABCD1234
+  const urlMatch = scannedText.match(/\/verify\/([A-Z0-9]+)/i);
+  if (urlMatch) {
+    return urlMatch[1].toUpperCase();
+  }
+  
+  // 如果是纯核销码（8位字母数字）
+  const codeMatch = scannedText.match(/^[A-Z0-9]{6,10}$/i);
+  if (codeMatch) {
+    return scannedText.toUpperCase();
+  }
+  
+  // 尝试从任意文本中提取核销码
+  const anyCodeMatch = scannedText.match(/([A-Z0-9]{6,10})/i);
+  if (anyCodeMatch) {
+    return anyCodeMatch[1].toUpperCase();
+  }
+  
+  return scannedText.toUpperCase();
+};
+
 export default function AdminVerifyPage() {
   const router = useRouter();
   const [code, setCode] = useState('');
@@ -52,8 +77,11 @@ export default function AdminVerifyPage() {
   const [showPromoterName, setShowPromoterName] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
+  const [showScanner, setShowScanner] = useState(false);
+  const [scanning, setScanning] = useState(false);
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const scannerRef = useRef<Html5QrcodeScanner | null>(null);
 
   // 检查是否已认证
   useEffect(() => {
@@ -66,8 +94,68 @@ export default function AdminVerifyPage() {
       if (timerRef.current) {
         clearTimeout(timerRef.current);
       }
+      // 清理扫码器
+      if (scannerRef.current) {
+        scannerRef.current.clear().catch(() => {});
+      }
     };
   }, []);
+
+  // 初始化扫码器
+  useEffect(() => {
+    if (showScanner && !scannerRef.current) {
+      // 延迟初始化，确保DOM已渲染
+      setTimeout(() => {
+        try {
+          scannerRef.current = new Html5QrcodeScanner(
+            'qr-reader',
+            {
+              fps: 10,
+              qrbox: { width: 250, height: 250 },
+              supportedScanTypes: [
+                Html5QrcodeScanType.SCAN_TYPE_CAMERA
+              ],
+              rememberLastUsedCamera: true,
+              showTorchButtonIfSupported: true,
+              showZoomSliderIfSupported: true,
+            },
+            false
+          );
+          
+          scannerRef.current.render(
+            (decodedText) => {
+              // 扫码成功
+              const extractedCode = extractVerifyCode(decodedText);
+              setCode(extractedCode);
+              setShowScanner(false);
+              toast.success('扫码成功');
+              
+              // 自动查询
+              setTimeout(() => {
+                handleSearchWithCode(extractedCode);
+              }, 300);
+            },
+            (error) => {
+              // 忽略扫码过程中的错误（如未找到二维码）
+              console.log('扫码中...', error);
+            }
+          );
+          setScanning(true);
+        } catch (error) {
+          console.error('初始化扫码器失败:', error);
+          toast.error('无法启动摄像头，请检查权限');
+        }
+      }, 100);
+    }
+    
+    return () => {
+      if (!showScanner && scannerRef.current) {
+        scannerRef.current.clear().catch(() => {});
+        scannerRef.current = null;
+        setScanning(false);
+      }
+    };
+  }, [showScanner]);
 
   // 验证密码
   const handleLogin = () => {
@@ -80,9 +168,9 @@ export default function AdminVerifyPage() {
     }
   };
 
-  // 查询核销码
-  const handleSearch = async () => {
-    if (!code.trim()) {
+  // 查询核销码（带参数版本，用于扫码后自动查询）
+  const handleSearchWithCode = async (codeToSearch: string) => {
+    if (!codeToSearch.trim()) {
       toast.error('请输入核销码');
       return;
     }
@@ -93,7 +181,7 @@ export default function AdminVerifyPage() {
     setShowPromoterName(false);
 
     try {
-      const res = await fetch(`/api/admin/verify?code=${code.trim().toUpperCase()}`);
+      const res = await fetch(`/api/admin/verify?code=${codeToSearch.trim().toUpperCase()}`);
       const data = await res.json();
 
       if (data.error) {
@@ -116,6 +204,11 @@ export default function AdminVerifyPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // 查询核销码
+  const handleSearch = async () => {
+    handleSearchWithCode(code);
   };
 
   // 确认核销
@@ -180,6 +273,16 @@ export default function AdminVerifyPage() {
     }
   };
 
+  // 关闭扫码器
+  const closeScanner = async () => {
+    if (scannerRef.current) {
+      await scannerRef.current.clear();
+      scannerRef.current = null;
+    }
+    setShowScanner(false);
+    setScanning(false);
+  };
+
   // 未认证时显示登录界面
   if (!authenticated) {
     return (
@@ -216,7 +319,7 @@ export default function AdminVerifyPage() {
           门店核销
         </h1>
 
-        {/* 输入框 */}
+        {/* 输入框和扫码按钮 */}
         <Card className="mb-4">
           <CardContent className="pt-4">
             <div className="flex gap-2">
@@ -226,17 +329,61 @@ export default function AdminVerifyPage() {
                 onChange={(e) => setCode(e.target.value.toUpperCase())}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                 className="text-lg font-mono"
+                autoFocus
               />
+              <Button 
+                onClick={() => setShowScanner(true)}
+                className="bg-green-500 hover:bg-green-600 shrink-0"
+                title="扫码核销"
+              >
+                <Camera className="h-4 w-4" />
+              </Button>
               <Button 
                 onClick={handleSearch}
                 disabled={loading || !code.trim()}
-                className="bg-pink-500 hover:bg-pink-600"
+                className="bg-pink-500 hover:bg-pink-600 shrink-0"
               >
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : '查询'}
               </Button>
             </div>
           </CardContent>
         </Card>
+
+        {/* 扫码弹窗 */}
+        {showScanner && (
+          <Card className="mb-4 border-2 border-green-400">
+            <CardContent className="pt-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-medium text-gray-700 flex items-center gap-2">
+                  <Camera className="h-4 w-4 text-green-500" />
+                  扫描核销码
+                </h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={closeScanner}
+                  className="h-8 w-8 p-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              <div id="qr-reader" className="w-full overflow-hidden rounded-lg"></div>
+              
+              {!scanning && (
+                <div className="text-center py-4 text-gray-500">
+                  <Camera className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                  <p className="text-sm">正在启动摄像头...</p>
+                  <p className="text-xs mt-1 text-gray-400">请允许访问摄像头权限</p>
+                </div>
+              )}
+              
+              <div className="mt-3 text-center text-xs text-gray-500">
+                将核销二维码放入框内，自动识别
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* 访客信息 */}
         {visitorInfo && !verifyResult?.success && (
