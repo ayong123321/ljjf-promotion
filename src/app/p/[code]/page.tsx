@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -61,7 +61,13 @@ export default function PromotionPage() {
   const [showGuide, setShowGuide] = useState(false);
   const [verifyCode, setVerifyCode] = useState<string | null>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // 当 verifyCode 变化时生成二维码（使用 useEffect 确保 DOM 已更新）
+  useEffect(() => {
+    if (verifyCode) {
+      generateQRCode(verifyCode);
+    }
+  }, [verifyCode]);
 
   useEffect(() => {
     recordVisit();
@@ -126,10 +132,9 @@ export default function PromotionPage() {
         setSubmitted(true);
         setVisitorRecordId(data.data.id);
         
-        // 如果有核销码，生成二维码
+        // 如果有核销码，设置状态（useEffect 会自动生成二维码）
         if (data.data.verify_code) {
           setVerifyCode(data.data.verify_code);
-          generateQRCode(data.data.verify_code);
         }
         
         toast.success('提交成功！我们会尽快联系您');
@@ -155,19 +160,6 @@ export default function PromotionPage() {
       // 核销链接
       const verifyUrl = `${window.location.origin}/verify/${code}`;
       
-      // 生成二维码到canvas
-      const canvas = canvasRef.current;
-      if (canvas) {
-        await QRCode.toCanvas(canvas, verifyUrl, {
-          width: 200,
-          margin: 2,
-          color: {
-            dark: '#000000',
-            light: '#ffffff'
-          }
-        });
-      }
-      
       // 生成可下载的DataURL
       const dataUrl = await QRCode.toDataURL(verifyUrl, {
         width: 300,
@@ -178,6 +170,7 @@ export default function PromotionPage() {
         }
       });
       setQrCodeUrl(dataUrl);
+      console.log('二维码生成成功:', code);
     } catch (error) {
       console.error('生成二维码失败:', error);
     }
@@ -487,7 +480,13 @@ export default function PromotionPage() {
                     {/* 二维码 */}
                     <div className="flex justify-center mb-3">
                       <div className="p-3 bg-white rounded-lg shadow-md">
-                        <canvas ref={canvasRef} className="block"></canvas>
+                        {qrCodeUrl ? (
+                          <img src={qrCodeUrl} alt="核销二维码" className="w-[200px] h-[200px]" />
+                        ) : (
+                          <div className="w-[200px] h-[200px] flex items-center justify-center">
+                            <div className="animate-spin text-pink-500">⏳</div>
+                          </div>
+                        )}
                       </div>
                     </div>
                     
