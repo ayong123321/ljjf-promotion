@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { CheckCircle, XCircle, Scan, User, Phone, Clock, DollarSign, Loader2, Camera, X } from 'lucide-react';
-import { Html5QrcodeScanner, Html5QrcodeScanType } from 'html5-qrcode';
+import { Html5Qrcode } from 'html5-qrcode';
 
 // 播放滴声
 const playBeep = () => {
@@ -81,7 +81,7 @@ export default function AdminVerifyPage() {
   const [scanning, setScanning] = useState(false);
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
 
   // 检查是否已认证
   useEffect(() => {
@@ -96,33 +96,44 @@ export default function AdminVerifyPage() {
       }
       // 清理扫码器
       if (scannerRef.current) {
-        scannerRef.current.clear().catch(() => {});
+        scannerRef.current.stop().then(() => {}).catch(() => {});
       }
     };
   }, []);
 
   // 初始化扫码器
   useEffect(() => {
-    if (showScanner && !scannerRef.current) {
+    if (showScanner) {
       // 延迟初始化，确保DOM已渲染
-      setTimeout(() => {
+      setTimeout(async () => {
         try {
-          scannerRef.current = new Html5QrcodeScanner(
-            'qr-reader',
-            {
-              fps: 10,
-              qrbox: { width: 250, height: 250 },
-              supportedScanTypes: [
-                Html5QrcodeScanType.SCAN_TYPE_CAMERA
-              ],
-              rememberLastUsedCamera: true,
-              showTorchButtonIfSupported: true,
-              showZoomSliderIfSupported: true,
-            },
-            false
+          // 创建扫码器实例
+          scannerRef.current = new Html5Qrcode('qr-reader');
+          
+          // 获取摄像头列表，找到后置摄像头
+          const devices = await Html5Qrcode.getCameras();
+          let backCamera = devices.find(device => 
+            device.label.toLowerCase().includes('back') || 
+            device.label.toLowerCase().includes('rear') ||
+            device.label.toLowerCase().includes('后置') ||
+            device.label.toLowerCase().includes('后摄')
           );
           
-          scannerRef.current.render(
+          // 如果没有找到后置摄像头，使用最后一个摄像头（通常是后置）
+          const cameraId = backCamera?.id || devices[devices.length - 1]?.id;
+          
+          if (!cameraId) {
+            toast.error('未找到可用的摄像头');
+            return;
+          }
+          
+          // 启动扫码
+          await scannerRef.current.start(
+            cameraId,
+            {
+              fps: 10,
+              qrbox: { width: 250, height: 250 }
+            },
             (decodedText) => {
               // 扫码成功
               const extractedCode = extractVerifyCode(decodedText);
@@ -135,11 +146,11 @@ export default function AdminVerifyPage() {
                 handleSearchWithCode(extractedCode);
               }, 300);
             },
-            (error) => {
-              // 忽略扫码过程中的错误（如未找到二维码）
-              console.log('扫码中...', error);
+            () => {
+              // 忽略扫码过程中的错误
             }
           );
+          
           setScanning(true);
         } catch (error) {
           console.error('初始化扫码器失败:', error);
@@ -149,10 +160,14 @@ export default function AdminVerifyPage() {
     }
     
     return () => {
-      if (!showScanner && scannerRef.current) {
-        scannerRef.current.clear().catch(() => {});
-        scannerRef.current = null;
-        setScanning(false);
+      if (scannerRef.current) {
+        scannerRef.current.stop().then(() => {
+          scannerRef.current = null;
+          setScanning(false);
+        }).catch(() => {
+          scannerRef.current = null;
+          setScanning(false);
+        });
       }
     };
   }, [showScanner]);
@@ -276,7 +291,7 @@ export default function AdminVerifyPage() {
   // 关闭扫码器
   const closeScanner = async () => {
     if (scannerRef.current) {
-      await scannerRef.current.clear();
+      await scannerRef.current.stop();
       scannerRef.current = null;
     }
     setShowScanner(false);
