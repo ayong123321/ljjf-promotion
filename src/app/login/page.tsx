@@ -53,16 +53,16 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!wechat.trim()) {
+      toast.error('请输入您的微信昵称');
+      return;
+    }
     if (!phone.trim()) {
       toast.error('请输入您的手机号');
       return;
     }
     if (!/^\d{11}$/.test(phone.trim())) {
       toast.error('请输入正确的11位手机号');
-      return;
-    }
-    if (!wechat.trim()) {
-      toast.error('请输入您的微信昵称');
       return;
     }
 
@@ -300,6 +300,18 @@ export default function LoginPage() {
           <CardContent className="pt-6">
             <form onSubmit={handleLogin} className="space-y-5">
               <div>
+                <Label htmlFor="wechat" className="text-gray-700 font-medium">微信昵称</Label>
+                <Input
+                  id="wechat"
+                  type="text"
+                  placeholder="请输入您的微信昵称"
+                  value={wechat}
+                  onChange={(e) => setWechat(e.target.value)}
+                  className="mt-2 border-purple-200 focus:border-purple-400"
+                />
+              </div>
+              
+              <div>
                 <Label htmlFor="phone" className="text-gray-700 font-medium">手机号</Label>
                 <Input
                   id="phone"
@@ -311,18 +323,6 @@ export default function LoginPage() {
                   onChange={(e) => setPhone(e.target.value)}
                   className="mt-2 border-purple-200 focus:border-purple-400"
                   maxLength={11}
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="wechat" className="text-gray-700 font-medium">微信昵称</Label>
-                <Input
-                  id="wechat"
-                  type="text"
-                  placeholder="请输入您的微信昵称"
-                  value={wechat}
-                  onChange={(e) => setWechat(e.target.value)}
-                  className="mt-2 border-purple-200 focus:border-purple-400"
                 />
               </div>
               

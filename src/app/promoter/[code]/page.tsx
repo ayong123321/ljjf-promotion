@@ -50,6 +50,12 @@ export default function PromoterPage() {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState('');
+  const [promotionUrl, setPromotionUrl] = useState('');
+
+  useEffect(() => {
+    // 只在客户端设置 URL
+    setPromotionUrl(`${window.location.origin}/p/${code}`);
+  }, [code]);
 
   useEffect(() => {
     fetchPromoterData();
@@ -121,8 +127,6 @@ export default function PromoterPage() {
     );
   }
 
-  const promotionUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/p/${code}`;
-  
   // 筛选有微信号的访客
   const visitorsWithWechat = data.visitorRecords.filter(v => v.wechat_id);
 

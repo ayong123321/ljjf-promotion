@@ -38,7 +38,7 @@ export default function JoinPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: phone.trim(), // 用手机号作为名称
+          name: wechatId.trim(), // 微信昵称作为名称
           phone: phone.trim(),
           wechat: wechatId.trim(),
         }),
