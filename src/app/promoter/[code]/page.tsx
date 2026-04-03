@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +11,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import { Users, Eye, Copy, Check, Link as LinkIcon, UserCheck, Download, QrCode, AlertCircle, MessageCircle } from 'lucide-react';
+
+// 动态导入 toast 以避免服务端问题
+const SonnerToaster = dynamic(() => import('@/components/ui/sonner').then(mod => mod.Toaster), { ssr: false });
 
 interface PromoterData {
   promoter: {
@@ -42,46 +46,39 @@ interface PromoterData {
   } | null;
 }
 
-// 格式化日期（确保客户端一致性）
-function formatDate(dateString: string): string {
-  const date = new Date(dateString);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  return `${year}-${month}-${day} ${hours}:${minutes}`;
-}
-
 export default function PromoterPage() {
   const params = useParams();
-  const code = params.code as string;
+  const code = Array.isArray(params.code) ? params.code[0] : params.code;
   
+  const [mounted, setMounted] = useState(false);
   const [data, setData] = useState<PromoterData | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
-  const [qrCodeUrl, setQrCodeUrl] = useState('');
-  const [promotionUrl, setPromotionUrl] = useState('');
-  const [mounted, setMounted] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
+  const [promotionUrl, setPromotionUrl] = useState<string>('');
 
   useEffect(() => {
     setMounted(true);
-    // 只在客户端设置 URL
-    setPromotionUrl(`${window.location.origin}/p/${code}`);
-  }, [code]);
+  }, []);
 
   useEffect(() => {
-    fetchPromoterData();
-  }, [code]);
+    if (code && mounted) {
+      fetchData();
+    }
+  }, [code, mounted]);
 
-  const fetchPromoterData = async () => {
+  const fetchData = useCallback(async () => {
+    if (!code) return;
+    
+    setLoading(true);
     try {
+      setPromotionUrl(`${window.location.origin}/p/${code}`);
+      setQrCodeUrl(`/api/promoter/${code}/qrcode`);
+      
       const res = await fetch(`/api/promoter/${code}`);
       const result = await res.json();
       if (result.data) {
         setData(result.data);
-        // 使用服务端API生成二维码
-        setQrCodeUrl(`/api/promoter/${code}/qrcode`);
       } else {
         toast.error(result.error || '获取数据失败');
       }
@@ -90,17 +87,18 @@ export default function PromoterPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [code]);
 
-  const copyPromotionLink = () => {
+  const copyPromotionLink = useCallback(() => {
     const url = promotionUrl || `${window.location.origin}/p/${code}`;
     navigator.clipboard.writeText(url);
     setCopied(true);
     toast.success('推广链接已复制！');
     setTimeout(() => setCopied(false), 2000);
-  };
+  }, [promotionUrl, code]);
 
-  const downloadQRCode = async () => {
+  const downloadQRCode = useCallback(async () => {
+    if (!code) return;
     try {
       const response = await fetch(`/api/promoter/${code}/qrcode`);
       const blob = await response.blob();
@@ -112,18 +110,19 @@ export default function PromoterPage() {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-      toast.success('二维码已下载，可以发朋友圈了！');
+      toast.success('二维码已下载！');
     } catch (error) {
-      console.error('下载二维码失败:', error);
       toast.error('下载二维码失败');
     }
-  };
+  }, [code]);
 
-  // 等待客户端挂载，避免 hydration 错误
   if (!mounted || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">加载中...</div>
+        <div className="text-center">
+          <div className="text-lg mb-2">加载中...</div>
+          <div className="text-sm text-gray-500">请稍候</div>
+        </div>
       </div>
     );
   }
@@ -139,17 +138,17 @@ export default function PromoterPage() {
     );
   }
 
-  // 筛选有微信号的访客
   const visitorsWithWechat = data.visitorRecords.filter(v => v.wechat_id);
 
   return (
     <div className="container mx-auto p-6 max-w-4xl">
+      <SonnerToaster />
+      
       <div className="mb-8">
         <h1 className="text-3xl font-bold">推广者后台</h1>
         <p className="text-gray-600 mt-2">欢迎, {data.promoter.name}!</p>
       </div>
 
-      {/* 微信使用提示 */}
       <Alert className="mb-6 border-orange-200 bg-orange-50">
         <AlertCircle className="h-4 w-4 text-orange-600" />
         <AlertTitle className="text-orange-800">微信使用说明</AlertTitle>
@@ -163,7 +162,6 @@ export default function PromoterPage() {
         </AlertDescription>
       </Alert>
 
-      {/* 留下微信号的访客 - 重点展示 */}
       {visitorsWithWechat.length > 0 && (
         <Card className="mb-6 border-2 border-green-200 bg-green-50">
           <CardHeader>
@@ -184,13 +182,13 @@ export default function PromoterPage() {
                         微信号: <span className="text-green-600 font-bold">{record.wechat_id}</span>
                       </div>
                       <div className="text-sm text-gray-500 mt-1">
-                        访问时间: {formatDate(record.created_at)}
+                        访问时间: {record.created_at}
                       </div>
                     </div>
                     <Button
                       onClick={() => {
                         navigator.clipboard.writeText(record.wechat_id!);
-                        toast.success('微信号已复制，快去微信添加吧！');
+                        toast.success('微信号已复制！');
                       }}
                       className="bg-green-600 hover:bg-green-700"
                     >
@@ -201,15 +199,13 @@ export default function PromoterPage() {
                   <div className="flex items-center gap-4 pt-2 border-t">
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-gray-600">微信状态:</span>
-                      <Badge variant={record.wechat_status === '已添加' ? 'default' : 'secondary'}
-                             className={record.wechat_status === '已添加' ? 'bg-green-600' : ''}>
+                      <Badge variant={record.wechat_status === '已添加' ? 'default' : 'secondary'}>
                         {record.wechat_status || '未添加'}
                       </Badge>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-gray-600">成交状态:</span>
-                      <Badge variant={record.deal_status === '已成交' ? 'default' : 'secondary'}
-                             className={record.deal_status === '已成交' ? 'bg-blue-600' : ''}>
+                      <Badge variant={record.deal_status === '已成交' ? 'default' : 'secondary'}>
                         {record.deal_status || '未成交'}
                       </Badge>
                     </div>
@@ -221,81 +217,50 @@ export default function PromoterPage() {
         </Card>
       )}
 
-      {/* 推广二维码卡片 */}
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <QrCode className="h-5 w-5" />
-            推广二维码（推荐使用）
+            推广二维码
           </CardTitle>
-          <CardDescription>
-            下载二维码图片发朋友圈，用户扫码即可访问
-          </CardDescription>
+          <CardDescription>下载二维码图片发朋友圈</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col md:flex-row items-center gap-6">
             {qrCodeUrl && (
               <div className="border rounded-lg p-4 bg-white">
-                <img 
-                  src={qrCodeUrl} 
-                  alt="推广二维码" 
-                  className="w-48 h-48"
-                />
+                <img src={qrCodeUrl} alt="推广二维码" className="w-48 h-48" />
               </div>
             )}
             <div className="flex-1 space-y-4">
-              <p className="text-gray-600">
-                扫描此二维码可以直接访问您的推广页面。
-                下载后发朋友圈效果更好！
-              </p>
+              <p className="text-gray-600">扫描此二维码可以直接访问您的推广页面</p>
               <Button onClick={downloadQRCode} size="lg" className="w-full md:w-auto">
                 <Download className="h-4 w-4 mr-2" />
                 下载二维码图片
               </Button>
-              <p className="text-sm text-gray-500">
-                提示：下载后在朋友圈发布时，可以配上吸引人的文案
-              </p>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* 推广链接卡片 */}
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <LinkIcon className="h-5 w-5" />
             推广链接
           </CardTitle>
-          <CardDescription>
-            复制链接在其他平台（如QQ、微博）使用
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex gap-2">
-            <Input
-              value={promotionUrl}
-              readOnly
-              className="flex-1"
-            />
+            <Input value={promotionUrl} readOnly className="flex-1" />
             <Button onClick={copyPromotionLink}>
-              {copied ? (
-                <>
-                  <Check className="h-4 w-4 mr-2" />
-                  已复制
-                </>
-              ) : (
-                <>
-                  <Copy className="h-4 w-4 mr-2" />
-                  复制链接
-                </>
-              )}
+              {copied ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
+              {copied ? '已复制' : '复制链接'}
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* 统计数据 */}
       <div className="grid gap-4 md:grid-cols-3 mb-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -304,10 +269,8 @@ export default function PromoterPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{data.stats.uniqueVisitors}</div>
-            <p className="text-xs text-muted-foreground">不同IP访问数量</p>
           </CardContent>
         </Card>
-        
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">总访问量</CardTitle>
@@ -315,48 +278,19 @@ export default function PromoterPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{data.stats.totalVisits}</div>
-            <p className="text-xs text-muted-foreground">总点击次数</p>
           </CardContent>
         </Card>
-        
-        <Card className={data.stats.wechatSubmissions > 0 ? 'border-2 border-green-500 bg-green-50' : ''}>
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">微信号提交</CardTitle>
             <UserCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">{data.stats.wechatSubmissions}</div>
-            <p className="text-xs text-muted-foreground">留下联系方式的访客</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* 推广内容预览 */}
-      {data.content && (
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>推广内容预览</CardTitle>
-            <CardDescription>访客看到的推广页面内容</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <h3 className="text-xl font-semibold">{data.content.title}</h3>
-              {data.content.description && (
-                <p className="text-gray-600">{data.content.description}</p>
-              )}
-              {data.content.image_url && (
-                <img
-                  src={data.content.image_url}
-                  alt={data.content.title}
-                  className="w-full max-w-md rounded-lg"
-                />
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* 访客记录 */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -372,69 +306,48 @@ export default function PromoterPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>访客IP</TableHead>
                   <TableHead>微信号</TableHead>
-                  <TableHead>微信状态</TableHead>
-                  <TableHead>成交状态</TableHead>
-                  <TableHead>访问时间</TableHead>
+                  <TableHead>状态</TableHead>
+                  <TableHead>时间</TableHead>
+                  <TableHead>操作</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {data.visitorRecords.slice(0, 20).map((record) => (
-                  <TableRow key={record.id} className={record.wechat_id ? 'bg-green-50' : ''}>
-                    <TableCell className="font-mono text-sm">
-                      {record.ip_address}
-                    </TableCell>
+                  <TableRow key={record.id}>
                     <TableCell>
                       {record.wechat_id ? (
-                        <div className="flex items-center gap-2">
-                          <Badge variant="default" className="bg-green-600">{record.wechat_id}</Badge>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              navigator.clipboard.writeText(record.wechat_id!);
-                              toast.success('微信号已复制');
-                            }}
-                          >
-                            复制
-                          </Button>
-                        </div>
+                        <Badge className="bg-green-600">{record.wechat_id}</Badge>
                       ) : (
                         <span className="text-gray-400">未留下</span>
                       )}
                     </TableCell>
                     <TableCell>
                       {record.wechat_id ? (
-                        <Badge variant={record.wechat_status === '已添加' ? 'default' : 'secondary'} 
-                               className={record.wechat_status === '已添加' ? 'bg-green-600' : ''}>
+                        <Badge variant={record.wechat_status === '已添加' ? 'default' : 'secondary'}>
                           {record.wechat_status || '未添加'}
                         </Badge>
                       ) : (
                         <span className="text-gray-400">-</span>
                       )}
                     </TableCell>
+                    <TableCell className="text-sm">{record.created_at}</TableCell>
                     <TableCell>
-                      {record.wechat_id ? (
-                        <Badge variant={record.deal_status === '已成交' ? 'default' : 'secondary'}
-                               className={record.deal_status === '已成交' ? 'bg-blue-600' : ''}>
-                          {record.deal_status || '未成交'}
-                        </Badge>
-                      ) : (
-                        <span className="text-gray-400">-</span>
+                      {record.wechat_id && (
+                        <Button size="sm" variant="outline" onClick={() => {
+                          navigator.clipboard.writeText(record.wechat_id!);
+                          toast.success('已复制');
+                        }}>
+                          复制
+                        </Button>
                       )}
-                    </TableCell>
-                    <TableCell>
-                      {formatDate(record.created_at)}
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           ) : (
-            <div className="text-center py-8 text-gray-500">
-              暂无访客记录，快去推广吧！
-            </div>
+            <div className="text-center py-8 text-gray-500">暂无访客记录</div>
           )}
         </CardContent>
       </Card>
