@@ -1,6 +1,5 @@
 {
   "buildCommand": "pnpm run build",
   "installCommand": "pnpm install",
-  "framework": "nextjs",
-  "regions": ["hkg1"]
+  "framework": "nextjs"
 }
