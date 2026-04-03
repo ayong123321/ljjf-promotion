@@ -42,6 +42,17 @@ interface PromoterData {
   } | null;
 }
 
+// 格式化日期（确保客户端一致性）
+function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day} ${hours}:${minutes}`;
+}
+
 export default function PromoterPage() {
   const params = useParams();
   const code = params.code as string;
@@ -51,8 +62,10 @@ export default function PromoterPage() {
   const [copied, setCopied] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState('');
   const [promotionUrl, setPromotionUrl] = useState('');
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     // 只在客户端设置 URL
     setPromotionUrl(`${window.location.origin}/p/${code}`);
   }, [code]);
@@ -80,9 +93,7 @@ export default function PromoterPage() {
   };
 
   const copyPromotionLink = () => {
-    // 使用正式域名
-    const domain = process.env.NEXT_PUBLIC_COZE_PROJECT_DOMAIN_DEFAULT || window.location.origin;
-    const url = `${domain}/p/${code}`;
+    const url = promotionUrl || `${window.location.origin}/p/${code}`;
     navigator.clipboard.writeText(url);
     setCopied(true);
     toast.success('推广链接已复制！');
@@ -108,7 +119,8 @@ export default function PromoterPage() {
     }
   };
 
-  if (loading) {
+  // 等待客户端挂载，避免 hydration 错误
+  if (!mounted || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-lg">加载中...</div>
@@ -172,7 +184,7 @@ export default function PromoterPage() {
                         微信号: <span className="text-green-600 font-bold">{record.wechat_id}</span>
                       </div>
                       <div className="text-sm text-gray-500 mt-1">
-                        访问时间: {new Date(record.created_at).toLocaleString('zh-CN')}
+                        访问时间: {formatDate(record.created_at)}
                       </div>
                     </div>
                     <Button
@@ -413,7 +425,7 @@ export default function PromoterPage() {
                       )}
                     </TableCell>
                     <TableCell>
-                      {new Date(record.created_at).toLocaleString('zh-CN')}
+                      {formatDate(record.created_at)}
                     </TableCell>
                   </TableRow>
                 ))}
