@@ -65,8 +65,7 @@ export async function POST(request: NextRequest) {
         phone,
         wechat: wechat || phone,
         unique_code: uniqueCode,
-        is_active: true,
-        password: '123456' // 默认密码
+        is_active: true
       })
       .select()
       .single();
