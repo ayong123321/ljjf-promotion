@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import dynamic from 'next/dynamic';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,9 +10,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import { Users, Eye, Copy, Check, Link as LinkIcon, UserCheck, Download, QrCode, AlertCircle, MessageCircle } from 'lucide-react';
-
-// 动态导入 toast 以避免服务端问题
-const SonnerToaster = dynamic(() => import('@/components/ui/sonner').then(mod => mod.Toaster), { ssr: false });
 
 interface PromoterData {
   promoter: {
@@ -54,7 +50,7 @@ export default function PromoterPage() {
   const [data, setData] = useState<PromoterData | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
-  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
   const [promotionUrl, setPromotionUrl] = useState<string>('');
 
   useEffect(() => {
@@ -62,59 +58,51 @@ export default function PromoterPage() {
   }, []);
 
   useEffect(() => {
-    if (code && mounted) {
-      fetchData();
-    }
-  }, [code, mounted]);
-
-  const fetchData = useCallback(async () => {
-    if (!code) return;
+    if (!code || !mounted) return;
     
     setLoading(true);
-    try {
-      setPromotionUrl(`${window.location.origin}/p/${code}`);
-      setQrCodeUrl(`/api/promoter/${code}/qrcode`);
-      
-      const res = await fetch(`/api/promoter/${code}`);
-      const result = await res.json();
-      if (result.data) {
-        setData(result.data);
-      } else {
-        toast.error(result.error || '获取数据失败');
-      }
-    } catch (error) {
-      toast.error('获取数据失败');
-    } finally {
-      setLoading(false);
-    }
-  }, [code]);
+    setPromotionUrl(`${window.location.origin}/p/${code}`);
+    setQrCodeUrl(`/api/promoter/${code}/qrcode`);
+    
+    fetch(`/api/promoter/${code}`)
+      .then(res => res.json())
+      .then(result => {
+        if (result.data) {
+          setData(result.data);
+        } else {
+          alert(result.error || '获取数据失败');
+        }
+      })
+      .catch(() => {
+        alert('获取数据失败');
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [code, mounted]);
 
-  const copyPromotionLink = useCallback(() => {
-    const url = promotionUrl || `${window.location.origin}/p/${code}`;
-    navigator.clipboard.writeText(url);
+  const copyPromotionLink = () => {
+    navigator.clipboard.writeText(promotionUrl);
     setCopied(true);
-    toast.success('推广链接已复制！');
     setTimeout(() => setCopied(false), 2000);
-  }, [promotionUrl, code]);
+  };
 
-  const downloadQRCode = useCallback(async () => {
+  const downloadQRCode = () => {
     if (!code) return;
-    try {
-      const response = await fetch(`/api/promoter/${code}/qrcode`);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `推广二维码_${code}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      toast.success('二维码已下载！');
-    } catch (error) {
-      toast.error('下载二维码失败');
-    }
-  }, [code]);
+    fetch(`/api/promoter/${code}/qrcode`)
+      .then(res => res.blob())
+      .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `推广二维码_${code}.png`;
+        link.click();
+        window.URL.revokeObjectURL(url);
+      })
+      .catch(() => {
+        alert('下载失败');
+      });
+  };
 
   if (!mounted || loading) {
     return (
@@ -142,8 +130,6 @@ export default function PromoterPage() {
 
   return (
     <div className="container mx-auto p-6 max-w-4xl">
-      <SonnerToaster />
-      
       <div className="mb-8">
         <h1 className="text-3xl font-bold">推广者后台</h1>
         <p className="text-gray-600 mt-2">欢迎, {data.promoter.name}!</p>
@@ -181,17 +167,11 @@ export default function PromoterPage() {
                       <div className="text-lg font-medium">
                         微信号: <span className="text-green-600 font-bold">{record.wechat_id}</span>
                       </div>
-                      <div className="text-sm text-gray-500 mt-1">
-                        访问时间: {record.created_at}
-                      </div>
+                      <div className="text-sm text-gray-500 mt-1">访问时间: {record.created_at}</div>
                     </div>
-                    <Button
-                      onClick={() => {
-                        navigator.clipboard.writeText(record.wechat_id!);
-                        toast.success('微信号已复制！');
-                      }}
-                      className="bg-green-600 hover:bg-green-700"
-                    >
+                    <Button onClick={() => {
+                      navigator.clipboard.writeText(record.wechat_id || '');
+                    }} className="bg-green-600 hover:bg-green-700">
                       <Copy className="h-4 w-4 mr-2" />
                       复制微信号
                     </Button>
@@ -335,8 +315,7 @@ export default function PromoterPage() {
                     <TableCell>
                       {record.wechat_id && (
                         <Button size="sm" variant="outline" onClick={() => {
-                          navigator.clipboard.writeText(record.wechat_id!);
-                          toast.success('已复制');
+                          navigator.clipboard.writeText(record.wechat_id || '');
                         }}>
                           复制
                         </Button>
