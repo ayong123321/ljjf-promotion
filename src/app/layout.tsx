@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { Inspector } from 'react-dev-inspector';
 import { Toaster } from '@/components/ui/sonner';
 import './globals.css';
 
@@ -33,12 +32,9 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const isDev = process.env.COZE_PROJECT_ENV === 'DEV';
-
   return (
     <html lang="zh-CN">
-      <body className={`antialiased`}>
-        {isDev && <Inspector />}
+      <body className="antialiased">
         {children}
         <Toaster />
       </body>
