@@ -70,14 +70,15 @@ except Exception as e:
 function getSupabaseCredentials(): SupabaseCredentials {
   loadEnv();
 
-  const url = process.env.COZE_SUPABASE_URL;
-  const anonKey = process.env.COZE_SUPABASE_ANON_KEY;
+  // 兼容多种环境变量名
+  const url = process.env.COZE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.COZE_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url) {
-    throw new Error('COZE_SUPABASE_URL is not set');
+    throw new Error('COZE_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_URL is not set');
   }
   if (!anonKey) {
-    throw new Error('COZE_SUPABASE_ANON_KEY is not set');
+    throw new Error('COZE_SUPABASE_ANON_KEY or NEXT_PUBLIC_SUPABASE_ANON_KEY is not set');
   }
 
   return { url, anonKey };
@@ -117,18 +118,19 @@ function getSupabaseClient(token?: string): SupabaseClient {
 function getSupabaseServiceClient(): SupabaseClient {
   loadEnv();
 
-  const url = process.env.COZE_SUPABASE_URL;
-  const serviceKey = process.env.COZE_SUPABASE_SERVICE_KEY;
-  const anonKey = process.env.COZE_SUPABASE_ANON_KEY;
+  // 兼容多种环境变量名
+  const url = process.env.COZE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.COZE_SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const anonKey = process.env.COZE_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url) {
-    throw new Error('COZE_SUPABASE_URL is not set');
+    throw new Error('COZE_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_URL is not set');
   }
-  
+
   // 如果没有 SERVICE_KEY，使用 ANON_KEY 作为后备
   const key = serviceKey || anonKey;
   if (!key) {
-    throw new Error('COZE_SUPABASE_SERVICE_KEY or COZE_SUPABASE_ANON_KEY is not set');
+    throw new Error('COZE_SUPABASE_SERVICE_KEY or SUPABASE_SERVICE_ROLE_KEY or COZE_SUPABASE_ANON_KEY or NEXT_PUBLIC_SUPABASE_ANON_KEY is not set');
   }
 
   return createClient(url, key, {
