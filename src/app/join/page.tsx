@@ -20,7 +20,7 @@ export default function JoinPage() {
     e.preventDefault();
     
     if (!wechatId.trim()) {
-      toast.error('请输入您的微信号');
+      toast.error('请输入您的微信昵称');
       return;
     }
     if (!phone.trim()) {
@@ -85,11 +85,11 @@ export default function JoinPage() {
           <CardContent className="pt-6">
             <form onSubmit={handleRegister} className="space-y-5">
               <div>
-                <Label htmlFor="wechat" className="text-gray-700 font-medium">微信号</Label>
+                <Label htmlFor="wechat" className="text-gray-700 font-medium">微信昵称</Label>
                 <Input
                   id="wechat"
                   type="text"
-                  placeholder="请输入您的微信号"
+                  placeholder="请输入您的微信昵称"
                   value={wechatId}
                   onChange={(e) => setWechatId(e.target.value)}
                   className="mt-2 border-purple-200 focus:border-purple-400"
@@ -100,7 +100,9 @@ export default function JoinPage() {
                 <Label htmlFor="phone" className="text-gray-700 font-medium">手机号</Label>
                 <Input
                   id="phone"
-                  type="tel"
+                  type="number"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   placeholder="请输入您的手机号"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}

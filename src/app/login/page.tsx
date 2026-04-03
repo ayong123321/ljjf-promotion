@@ -62,7 +62,7 @@ export default function LoginPage() {
       return;
     }
     if (!wechat.trim()) {
-      toast.error('请输入您的微信号');
+      toast.error('请输入您的微信昵称');
       return;
     }
 
@@ -303,7 +303,9 @@ export default function LoginPage() {
                 <Label htmlFor="phone" className="text-gray-700 font-medium">手机号</Label>
                 <Input
                   id="phone"
-                  type="tel"
+                  type="number"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   placeholder="请输入您的手机号"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
@@ -313,11 +315,11 @@ export default function LoginPage() {
               </div>
               
               <div>
-                <Label htmlFor="wechat" className="text-gray-700 font-medium">微信号</Label>
+                <Label htmlFor="wechat" className="text-gray-700 font-medium">微信昵称</Label>
                 <Input
                   id="wechat"
                   type="text"
-                  placeholder="请输入您的微信号"
+                  placeholder="请输入您的微信昵称"
                   value={wechat}
                   onChange={(e) => setWechat(e.target.value)}
                   className="mt-2 border-purple-200 focus:border-purple-400"

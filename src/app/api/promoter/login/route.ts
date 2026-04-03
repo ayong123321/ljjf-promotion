@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     console.log('[登录] 收到请求:', { phone, wechat });
 
     if (!phone || !wechat) {
-      return NextResponse.json({ error: '请输入手机号和微信号' }, { status: 400 });
+      return NextResponse.json({ error: '请输入手机号和微信昵称' }, { status: 400 });
     }
 
     const client = getSupabaseServiceClient();
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!promoter) {
-      return NextResponse.json({ error: '手机号或微信号错误，或您还未注册' }, { status: 401 });
+      return NextResponse.json({ error: '手机号或微信昵称错误，或您还未注册' }, { status: 401 });
     }
 
     console.log('[登录] 登录成功:', promoter);
