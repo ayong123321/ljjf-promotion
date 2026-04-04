@@ -15,9 +15,9 @@ function generatePromoterCode(): string {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, phone, wechat, referrerCode } = body;
+    const { name, phone, wechat, referrerCode, cashbackRuleType = 'type_300' } = body;
 
-    console.log('[推广者注册] 收到请求:', { name, phone, wechat, referrerCode });
+    console.log('[推广者注册] 收到请求:', { name, phone, wechat, referrerCode, cashbackRuleType });
 
     if (!name || !phone) {
       return NextResponse.json({ error: '请填写姓名和手机号' }, { status: 400 });
@@ -65,7 +65,8 @@ export async function POST(request: NextRequest) {
         phone,
         wechat: wechat || phone,
         unique_code: uniqueCode,
-        is_active: true
+        is_active: true,
+        cashback_rule_type: cashbackRuleType
       })
       .select()
       .single();
