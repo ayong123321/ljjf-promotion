@@ -15,7 +15,7 @@ function generatePromoterCode(): string {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, phone, wechat, referrerCode, cashbackRuleType = 'type_300' } = body;
+    const { name, phone, wechat, referrerCode, cashbackRuleType = 'type_100' } = body;
 
     console.log('[推广者注册] 收到请求:', { name, phone, wechat, referrerCode, cashbackRuleType });
 
