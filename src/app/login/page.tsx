@@ -52,7 +52,7 @@ export default function LoginPage() {
   // 登录
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!wechat.trim()) {
       toast.error('请输入您的微信昵称');
       return;
@@ -68,6 +68,8 @@ export default function LoginPage() {
 
     setSubmitting(true);
     try {
+      console.log('[登录] 开始登录:', { phone: phone.trim(), wechat: wechat.trim() });
+
       const res = await fetch('/api/promoter/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -76,8 +78,19 @@ export default function LoginPage() {
           wechat: wechat.trim(),
         }),
       });
+
+      console.log('[登录] 响应状态:', res.status);
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('[登录] HTTP错误:', res.status, errorText);
+        toast.error(`登录失败: ${res.status} - ${errorText}`);
+        return;
+      }
+
       const data = await res.json();
-      
+      console.log('[登录] 响应数据:', data);
+
       if (data.data) {
         setPromoterInfo(data.data);
         toast.success('登录成功！');
@@ -85,8 +98,8 @@ export default function LoginPage() {
         toast.error(data.error || '登录失败，请重试');
       }
     } catch (error) {
-      console.error('登录失败:', error);
-      toast.error('登录失败，请重试');
+      console.error('[登录] 异常:', error);
+      toast.error('网络错误，请重试');
     } finally {
       setSubmitting(false);
     }

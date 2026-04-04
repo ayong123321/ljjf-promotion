@@ -34,6 +34,8 @@ export default function Join300Page() {
 
     setSubmitting(true);
     try {
+      console.log('[注册] 开始注册:', { wechat: wechatId.trim(), phone: phone.trim() });
+
       const res = await fetch('/api/promoter/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -44,7 +46,18 @@ export default function Join300Page() {
           cashbackRuleType: 'type_300' // 指定为300版本
         }),
       });
+
+      console.log('[注册] 响应状态:', res.status);
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('[注册] HTTP错误:', res.status, errorText);
+        toast.error(`注册失败: ${res.status} - ${errorText}`);
+        return;
+      }
+
       const data = await res.json();
+      console.log('[注册] 响应数据:', data);
 
       if (data.data) {
         if (data.isNew) {
@@ -52,13 +65,15 @@ export default function Join300Page() {
         } else {
           toast.info('您已经是推广者了，请直接登录');
         }
-        router.push('/login');
+        setTimeout(() => {
+          router.push('/login');
+        }, 1000);
       } else {
         toast.error(data.error || '注册失败，请重试');
       }
     } catch (error) {
-      console.error('注册失败:', error);
-      toast.error('注册失败，请重试');
+      console.error('[注册] 异常:', error);
+      toast.error('网络错误，请重试');
     } finally {
       setSubmitting(false);
     }
