@@ -20,10 +20,10 @@ export async function GET(
     const { code } = await params;
     const client = getSupabaseServiceClient();
     
-    // 获取推广者信息
+    // 获取推广者信息（先查询基本信息，兼容生产环境缺少字段的情况）
     const { data: promoter, error: promoterError } = await client
       .from('promoters')
-      .select('id, name, unique_code, cashback_rule_type')
+      .select('id, name, unique_code')
       .eq('unique_code', code)
       .maybeSingle();
 
@@ -35,13 +35,30 @@ export async function GET(
       return NextResponse.json({ success: false, error: '推广者不存在' });
     }
 
+    // 尝试获取 cashback_rule_type，如果字段不存在则使用默认值
+    let cashbackRuleType = 'type_300';
+    try {
+      const { data: promoterWithRule } = await client
+        .from('promoters')
+        .select('cashback_rule_type')
+        .eq('unique_code', code)
+        .single();
+
+      if (promoterWithRule?.cashback_rule_type) {
+        cashbackRuleType = promoterWithRule.cashback_rule_type;
+      }
+    } catch (err) {
+      // 字段不存在，使用默认值
+      console.log('cashback_rule_type field not found, using default: type_300');
+    }
+
     // 格式化推广者数据
-    const promoterTyped = promoter as { id: number; name: string; unique_code: string; cashback_rule_type: string | null };
+    const promoterTyped = promoter as { id: number; name: string; unique_code: string };
     const promoterData = {
       id: promoterTyped.id,
       name: promoterTyped.name,
       code: promoterTyped.unique_code,
-      cashbackRuleType: promoterTyped.cashback_rule_type || 'type_300' // 从数据库读取，默认300版本
+      cashbackRuleType // 使用降级逻辑获取的值
     };
     
     // 获取访客记录
