@@ -45,18 +45,41 @@ export async function POST(request: NextRequest) {
 
     // 尝试创建新推广者
     console.log('[推广者注册] 创建新推广者:', { name, phone, cashbackRuleType });
-    const { data: newPromoter, error: insertError } = await client
+
+    let insertData: Record<string, unknown> = {
+      name,
+      phone,
+      wechat: wechat || phone,
+      unique_code: uniqueCode,
+      is_active: true,
+      cashback_rule_type: cashbackRuleType
+    };
+
+    let { data: newPromoter, error: insertError } = await client
       .from('promoters')
-      .insert({
+      .insert(insertData)
+      .select()
+      .single();
+
+    // 如果cashback_rule_type字段不存在，重试不带该字段的插入
+    if (insertError && insertError.message?.includes('cashback_rule_type')) {
+      console.log('[推广者注册] 数据库不支持cashback_rule_type字段，重试不带字段的插入');
+      insertData = {
         name,
         phone,
         wechat: wechat || phone,
         unique_code: uniqueCode,
-        is_active: true,
-        cashback_rule_type: cashbackRuleType
-      })
-      .select()
-      .single();
+        is_active: true
+      };
+
+      const result = await client
+        .from('promoters')
+        .insert(insertData)
+        .select()
+        .single();
+      newPromoter = result.data;
+      insertError = result.error;
+    }
 
     if (insertError) {
       console.error('[推广者注册] 创建失败:', insertError);

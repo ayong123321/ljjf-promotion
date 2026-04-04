@@ -46,8 +46,7 @@ export async function GET(request: NextRequest) {
         promoters (
           id,
           name,
-          unique_code,
-          cashback_rule_type
+          unique_code
         )
       `)
       .eq('verify_code', code)
@@ -92,8 +91,7 @@ export async function POST(request: NextRequest) {
         promoters (
           id,
           name,
-          unique_code,
-          cashback_rule_type
+          unique_code
         )
       `)
       .eq('verify_code', code)
