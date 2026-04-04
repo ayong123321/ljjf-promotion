@@ -23,24 +23,25 @@ export async function GET(
     // 获取推广者信息
     const { data: promoter, error: promoterError } = await client
       .from('promoters')
-      .select('id, name, unique_code')
+      .select('id, name, unique_code, cashback_rule_type')
       .eq('unique_code', code)
       .maybeSingle();
-    
+
     if (promoterError) {
       return NextResponse.json({ success: false, error: promoterError.message });
     }
-    
+
     if (!promoter) {
       return NextResponse.json({ success: false, error: '推广者不存在' });
     }
-    
+
     // 格式化推广者数据
+    const promoterTyped = promoter as { id: number; name: string; unique_code: string; cashback_rule_type: string | null };
     const promoterData = {
-      id: (promoter as { id: number; name: string; unique_code: string }).id,
-      name: (promoter as { id: number; name: string; unique_code: string }).name,
-      code: (promoter as { id: number; name: string; unique_code: string }).unique_code,
-      cashbackRuleType: 'type_300' // 默认使用300版本
+      id: promoterTyped.id,
+      name: promoterTyped.name,
+      code: promoterTyped.unique_code,
+      cashbackRuleType: promoterTyped.cashback_rule_type || 'type_300' // 从数据库读取，默认300版本
     };
     
     // 获取访客记录
@@ -68,7 +69,8 @@ export async function GET(
       uniqueVisitors: uniqueIps.size || 0,
       wechatSubmissions: ipWechatMap.size || 0,
       addedCount: visitors?.filter((v: { deal_status: string | null }) => mapStatus(v.deal_status) === 'added').length || 0,
-      dealedCount: visitors?.filter((v: { deal_status: string | null }) => mapStatus(v.deal_status) === 'dealed').length || 0
+      dealedCount: visitors?.filter((v: { deal_status: string | null }) => mapStatus(v.deal_status) === 'dealed').length || 0,
+      verifiedCount: visitors?.filter((v: { deal_status: string | null }) => mapStatus(v.deal_status) === 'dealed').length || 0 // 已核销人数 = 已成交人数
     };
     
     // 获取所有内容（图片和视频）
