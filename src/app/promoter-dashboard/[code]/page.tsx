@@ -162,30 +162,31 @@ export default function PromoterDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-900">
-      <div className="max-w-md mx-auto px-4 py-5">
+      <div className="w-full max-w-7xl mx-auto px-4 py-5 sm:px-6 lg:px-8">
+        {/* 手机端优化：根据屏幕宽度调整容器 */}
         
         {/* 头部：推广者信息 + 实时状态 */}
         <div className="mb-5">
-          <div className="flex items-center gap-4 mb-4">
+          <div className="flex items-center gap-3 sm:gap-4 mb-4">
             {/* 头像 */}
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-violet-500/40">
-              <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <div className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-2xl bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-violet-500/40 flex-shrink-0">
+              <svg className="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
               </svg>
             </div>
             {/* 名称和推广码 */}
-            <div className="flex-1">
-              <p className="text-slate-400 text-sm mb-1">推广者</p>
-              <h1 className="text-2xl font-bold text-white mb-1">{promoter?.name}</h1>
-              <div className="flex items-center gap-2">
-                <span className="text-amber-400 text-sm">推广码</span>
-                <span className="text-white font-mono text-base tracking-wider font-semibold bg-white/10 px-2 py-0.5 rounded">{code}</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-slate-400 text-xs sm:text-sm mb-1">推广者</p>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-1 truncate">{promoter?.name}</h1>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-amber-400 text-xs sm:text-sm">推广码</span>
+                <span className="text-white font-mono text-sm sm:text-base lg:text-lg tracking-wider font-semibold bg-white/10 px-2 py-0.5 rounded">{code}</span>
               </div>
             </div>
           </div>
-          
+
           {/* 实时状态指示器 */}
-          <div className="flex items-center justify-center gap-2 text-sm">
+          <div className="flex items-center justify-center gap-2 text-xs sm:text-sm">
             {isUpdating ? (
               <div className="flex items-center gap-2 text-emerald-400">
                 <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
@@ -204,9 +205,9 @@ export default function PromoterDashboard() {
         <div className="flex gap-2 mb-5 bg-white/5 rounded-2xl p-1.5">
           <button
             onClick={() => setActiveTab('stats')}
-            className={`flex-1 py-3.5 px-4 rounded-xl font-semibold text-base transition-all ${
-              activeTab === 'stats' 
-                ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow-lg shadow-violet-500/30' 
+            className={`flex-1 py-3 sm:py-3.5 px-3 sm:px-4 rounded-xl font-semibold text-sm sm:text-base transition-all ${
+              activeTab === 'stats'
+                ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow-lg shadow-violet-500/30'
                 : 'text-slate-400'
             }`}
           >
@@ -214,15 +215,15 @@ export default function PromoterDashboard() {
           </button>
           <button
             onClick={() => setActiveTab('visitors')}
-            className={`flex-1 py-3.5 px-4 rounded-xl font-semibold text-base transition-all relative ${
-              activeTab === 'visitors' 
-                ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30' 
+            className={`flex-1 py-3 sm:py-3.5 px-3 sm:px-4 rounded-xl font-semibold text-sm sm:text-base transition-all relative ${
+              activeTab === 'visitors'
+                ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30'
                 : 'text-slate-400'
             }`}
           >
             访客记录
             {visitors.filter(v => v.hasWechat).length > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-6 h-6 px-1.5 bg-gradient-to-r from-rose-500 to-pink-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+              <span className="absolute -top-1 -right-1 min-w-5 h-5 sm:min-w-6 sm:h-6 px-1 sm:px-1.5 bg-gradient-to-r from-rose-500 to-pink-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
                 {visitors.filter(v => v.hasWechat).length}
               </span>
             )}
@@ -234,16 +235,16 @@ export default function PromoterDashboard() {
           <div className="space-y-4" key={highlightKey}>
             
             {/* 核心指标：留微信数 - 最大最醒目 */}
-            <div className={`relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-500 via-orange-500 to-rose-500 p-6 shadow-xl shadow-orange-500/30 transition-all duration-500 ${hasChanged('wechatSubmissions') ? 'ring-4 ring-white/50 scale-105' : ''}`}>
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
-              <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2"></div>
+            <div className={`relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-500 via-orange-500 to-rose-500 p-4 sm:p-6 shadow-xl shadow-orange-500/30 transition-all duration-500 ${hasChanged('wechatSubmissions') ? 'ring-4 ring-white/50 scale-105' : ''}`}>
+              <div className="absolute top-0 right-0 w-20 h-20 sm:w-32 sm:h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+              <div className="absolute bottom-0 left-0 w-16 h-16 sm:w-24 sm:h-24 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2"></div>
               <div className="relative flex items-center justify-between">
                 <div>
-                  <p className="text-white/80 text-base font-medium mb-2">留微信数</p>
-                  <p className="text-6xl font-bold text-white transition-all duration-300">{stats.wechatSubmissions}</p>
+                  <p className="text-white/80 text-sm sm:text-base font-medium mb-2">留微信数</p>
+                  <p className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white transition-all duration-300">{stats.wechatSubmissions}</p>
                 </div>
-                <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center">
-                  <svg className="w-9 h-9 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <div className="w-10 h-10 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-white/20 rounded-2xl flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 sm:w-7 sm:h-7 lg:w-9 lg:h-9 text-white" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 01.213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 00.167-.054l1.903-1.114a.864.864 0 01.717-.098 10.16 10.16 0 002.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348zM5.785 5.991c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 01-1.162 1.178A1.17 1.17 0 014.623 7.17c0-.651.52-1.18 1.162-1.18zm5.813 0c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 01-1.162 1.178 1.17 1.17 0 01-1.162-1.178c0-.651.52-1.18 1.162-1.18z"/>
                   </svg>
                 </div>
@@ -251,61 +252,61 @@ export default function PromoterDashboard() {
             </div>
 
             {/* 两列数据 */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
               {/* 总访问 */}
-              <div className={`rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 p-5 shadow-lg shadow-cyan-500/25 transition-all duration-500 ${hasChanged('totalVisitors') ? 'ring-2 ring-white/50' : ''}`}>
+              <div className={`rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 p-4 sm:p-5 shadow-lg shadow-cyan-500/25 transition-all duration-500 ${hasChanged('totalVisitors') ? 'ring-2 ring-white/50' : ''}`}>
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-                    <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                   </div>
-                  <span className="text-white/80 text-sm">总访问</span>
+                  <span className="text-white/80 text-xs sm:text-sm">总访问</span>
                 </div>
-                <p className="text-4xl font-bold text-white transition-all duration-300">{stats.totalVisitors}</p>
+                <p className="text-3xl sm:text-4xl font-bold text-white transition-all duration-300">{stats.totalVisitors}</p>
               </div>
 
               {/* 独立访客 */}
-              <div className={`rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 p-5 shadow-lg shadow-emerald-500/25 transition-all duration-500 ${hasChanged('uniqueVisitors') ? 'ring-2 ring-white/50' : ''}`}>
+              <div className={`rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 p-4 sm:p-5 shadow-lg shadow-emerald-500/25 transition-all duration-500 ${hasChanged('uniqueVisitors') ? 'ring-2 ring-white/50' : ''}`}>
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-                    <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
                     </svg>
                   </div>
-                  <span className="text-white/80 text-sm">独立访客</span>
+                  <span className="text-white/80 text-xs sm:text-sm">独立访客</span>
                 </div>
-                <p className="text-4xl font-bold text-white transition-all duration-300">{stats.uniqueVisitors}</p>
+                <p className="text-3xl sm:text-4xl font-bold text-white transition-all duration-300">{stats.uniqueVisitors}</p>
               </div>
             </div>
 
             {/* 成交数据 */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
               {/* 已添加 */}
-              <div className={`rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 p-5 shadow-lg shadow-violet-500/25 transition-all duration-500 ${hasChanged('addedCount') ? 'ring-2 ring-white/50' : ''}`}>
+              <div className={`rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 p-4 sm:p-5 shadow-lg shadow-violet-500/25 transition-all duration-500 ${hasChanged('addedCount') ? 'ring-2 ring-white/50' : ''}`}>
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-                    <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
                     </svg>
                   </div>
-                  <span className="text-white/80 text-sm">已添加</span>
+                  <span className="text-white/80 text-xs sm:text-sm">已添加</span>
                 </div>
-                <p className="text-4xl font-bold text-white transition-all duration-300">{stats.addedCount}</p>
+                <p className="text-3xl sm:text-4xl font-bold text-white transition-all duration-300">{stats.addedCount}</p>
               </div>
 
               {/* 已成交 */}
-              <div className={`rounded-2xl bg-gradient-to-br from-rose-500 to-pink-600 p-5 shadow-lg shadow-rose-500/25 transition-all duration-500 ${hasChanged('dealedCount') ? 'ring-2 ring-white/50' : ''}`}>
+              <div className={`rounded-2xl bg-gradient-to-br from-rose-500 to-pink-600 p-4 sm:p-5 shadow-lg shadow-rose-500/25 transition-all duration-500 ${hasChanged('dealedCount') ? 'ring-2 ring-white/50' : ''}`}>
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-                    <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
-                  <span className="text-white/80 text-sm">已成交</span>
+                  <span className="text-white/80 text-xs sm:text-sm">已成交</span>
                 </div>
-                <p className="text-4xl font-bold text-white transition-all duration-300">{stats.dealedCount}</p>
+                <p className="text-3xl sm:text-4xl font-bold text-white transition-all duration-300">{stats.dealedCount}</p>
               </div>
             </div>
 
@@ -340,66 +341,66 @@ export default function PromoterDashboard() {
               {promoter?.cashbackRuleType === 'type_100' ? (
                 // 100版本：稳定奖励计划
                 <>
-                  <h4 className="font-semibold text-white mb-3 flex items-center gap-2 text-base">
-                    <span className="text-xl">💰</span> 稳定奖励计划
+                  <h4 className="font-semibold text-white mb-3 flex items-center gap-2 text-sm sm:text-base">
+                    <span className="text-lg sm:text-xl">💰</span> 稳定奖励计划
                   </h4>
-                  <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 rounded-xl p-4 mb-3 border border-blue-400/20">
+                  <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 rounded-xl p-3 sm:p-4 mb-3 border border-blue-400/20">
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="text-lg">📊</span>
-                      <p className="text-blue-200 text-sm font-semibold">收益稳定</p>
+                      <span className="text-base sm:text-lg">📊</span>
+                      <p className="text-blue-200 text-xs sm:text-sm font-semibold">收益稳定</p>
                     </div>
-                    <p className="text-blue-100 text-base">每次消费：100元奖励</p>
-                    <p className="text-blue-100 text-base">不限制消费次数</p>
+                    <p className="text-blue-100 text-sm sm:text-base">每次消费：100元奖励</p>
+                    <p className="text-blue-100 text-sm sm:text-base">不限制消费次数</p>
                   </div>
-                  <div className="grid grid-cols-3 gap-3 mb-3">
-                    <div className="bg-white/10 rounded-lg p-3 text-center border border-blue-400/30">
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-3">
+                    <div className="bg-white/10 rounded-lg p-2 sm:p-3 text-center border border-blue-400/30">
                       <p className="text-xs text-blue-200">第1次</p>
-                      <p className="text-xl font-bold text-blue-400">100元</p>
+                      <p className="text-lg sm:text-xl font-bold text-blue-400">100元</p>
                     </div>
-                    <div className="bg-white/10 rounded-lg p-3 text-center border border-blue-400/30">
+                    <div className="bg-white/10 rounded-lg p-2 sm:p-3 text-center border border-blue-400/30">
                       <p className="text-xs text-blue-200">第2次</p>
-                      <p className="text-xl font-bold text-blue-400">100元</p>
+                      <p className="text-lg sm:text-xl font-bold text-blue-400">100元</p>
                     </div>
-                    <div className="bg-white/10 rounded-lg p-3 text-center border border-blue-400/30">
+                    <div className="bg-white/10 rounded-lg p-2 sm:p-3 text-center border border-blue-400/30">
                       <p className="text-xs text-blue-200">第3次</p>
-                      <p className="text-xl font-bold text-blue-400">100元</p>
+                      <p className="text-lg sm:text-xl font-bold text-blue-400">100元</p>
                     </div>
                   </div>
                   <div className="flex items-center justify-center gap-1">
-                    <span className="text-2xl">⭐</span>
-                    <p className="text-blue-200 text-sm">适合稳定分享</p>
+                    <span className="text-xl sm:text-2xl">⭐</span>
+                    <p className="text-blue-200 text-xs sm:text-sm">适合稳定分享</p>
                   </div>
                 </>
               ) : (
                 // 300版本：奖励规则
                 <>
-                  <h4 className="font-semibold text-white mb-3 flex items-center gap-2 text-base">
-                    <span className="text-xl">🎁</span> 奖励规则
+                  <h4 className="font-semibold text-white mb-3 flex items-center gap-2 text-sm sm:text-base">
+                    <span className="text-lg sm:text-xl">🎁</span> 奖励规则
                   </h4>
-                  <div className="text-purple-200 text-sm mb-3 text-center">每3人一轮，循环计算</div>
-                  <div className="grid grid-cols-3 gap-3 mb-3">
-                    <div className="bg-white/10 rounded-lg p-3 text-center border-2 border-green-400">
+                  <div className="text-purple-200 text-xs sm:text-sm mb-3 text-center">每3人一轮，循环计算</div>
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-3">
+                    <div className="bg-white/10 rounded-lg p-2 sm:p-3 text-center border-2 border-green-400">
                       <p className="text-xs text-gray-300">第1人</p>
-                      <p className="text-2xl font-bold text-green-400">100元</p>
+                      <p className="text-lg sm:text-2xl font-bold text-green-400">100元</p>
                     </div>
-                    <div className="bg-white/10 rounded-lg p-3 text-center border-2 border-blue-400">
+                    <div className="bg-white/10 rounded-lg p-2 sm:p-3 text-center border-2 border-blue-400">
                       <p className="text-xs text-gray-300">第2人</p>
-                      <p className="text-2xl font-bold text-blue-400">200元</p>
+                      <p className="text-lg sm:text-2xl font-bold text-blue-400">200元</p>
                     </div>
-                    <div className="bg-white/10 rounded-lg p-3 text-center border-2 border-purple-400">
+                    <div className="bg-white/10 rounded-lg p-2 sm:p-3 text-center border-2 border-purple-400">
                       <p className="text-xs text-gray-300">第3人</p>
-                      <p className="text-2xl font-bold text-purple-400">300元</p>
+                      <p className="text-lg sm:text-2xl font-bold text-purple-400">300元</p>
                     </div>
                   </div>
-                  <div className="flex items-center justify-center gap-2 mb-3">
-                    <div className="w-4 h-4 rounded-full bg-green-400"></div>
-                    <div className="w-4 h-4 rounded-full bg-blue-400"></div>
-                    <div className="w-4 h-4 rounded-full bg-purple-400"></div>
-                    <div className="w-4 h-4 rounded-full bg-green-400"></div>
-                    <div className="w-4 h-4 rounded-full bg-blue-400"></div>
-                    <div className="w-4 h-4 rounded-full bg-purple-400"></div>
+                  <div className="flex items-center justify-center gap-1.5 sm:gap-2 mb-3">
+                    <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-green-400"></div>
+                    <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-blue-400"></div>
+                    <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-purple-400"></div>
+                    <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-green-400"></div>
+                    <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-blue-400"></div>
+                    <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-purple-400"></div>
                   </div>
-                  <p className="text-purple-200 text-sm text-center">
+                  <p className="text-purple-200 text-xs sm:text-sm text-center">
                     您当前位于第 {((stats.verifiedCount - 1) % 3) + 1} 位
                   </p>
                 </>
@@ -408,16 +409,16 @@ export default function PromoterDashboard() {
 
             {/* 转化率 */}
             {stats.wechatSubmissions > 0 && (
-              <div className="rounded-2xl bg-white/10 p-5 border border-white/10">
+              <div className="rounded-2xl bg-white/10 p-4 sm:p-5 border border-white/10">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    <span className="text-slate-300 text-base font-medium">成交转化率</span>
+                    <span className="text-slate-300 text-sm sm:text-base font-medium">成交转化率</span>
                   </div>
-                  <span className="text-3xl font-bold text-white">
+                  <span className="text-2xl sm:text-3xl font-bold text-white">
                     {Math.round((stats.dealedCount / stats.wechatSubmissions) * 100)}%
                   </span>
                 </div>
-                <div className="h-4 bg-white/10 rounded-full overflow-hidden">
+                <div className="h-3 sm:h-4 bg-white/10 rounded-full overflow-hidden">
                   <div 
                     className="h-full bg-gradient-to-r from-emerald-400 via-cyan-400 to-teal-400 rounded-full transition-all duration-700"
                     style={{ width: `${Math.min(100, Math.round((stats.dealedCount / stats.wechatSubmissions) * 100))}%` }}
@@ -430,22 +431,22 @@ export default function PromoterDashboard() {
 
         {/* 访客记录 */}
         {activeTab === 'visitors' && (
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             {visitors.filter(v => v.hasWechat).length === 0 ? (
-              <div className="rounded-2xl bg-white/5 p-10 text-center border border-white/10">
-                <div className="w-20 h-20 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-10 h-10 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <div className="rounded-2xl bg-white/5 p-6 sm:p-10 text-center border border-white/10">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 sm:w-10 sm:h-10 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
                   </svg>
                 </div>
-                <p className="text-slate-300 text-lg font-medium mb-2">暂无留微信的访客</p>
-                <p className="text-slate-500 text-sm">分享您的推广链接，开始收集访客信息</p>
+                <p className="text-slate-300 text-base sm:text-lg font-medium mb-2">暂无留微信的访客</p>
+                <p className="text-slate-500 text-xs sm:text-sm">分享您的推广链接，开始收集访客信息</p>
               </div>
             ) : (
               visitors.filter(v => v.hasWechat).map((v, index) => (
                 <div 
                   key={v.id} 
-                  className={`rounded-2xl p-4 transition-all duration-300 ${
+                  className={`rounded-2xl p-3 sm:p-4 transition-all duration-300 ${
                     v.status === 'dealed' 
                       ? 'bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border border-emerald-500/30' 
                       : v.status === 'added' 
@@ -454,8 +455,8 @@ export default function PromoterDashboard() {
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-lg ${
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-white font-bold text-sm sm:text-base lg:text-lg flex-shrink-0 ${
                         v.status === 'dealed' 
                           ? 'bg-gradient-to-br from-emerald-500 to-teal-500' 
                           : v.status === 'added' 
@@ -464,12 +465,12 @@ export default function PromoterDashboard() {
                       }`}>
                         {index + 1}
                       </div>
-                      <div>
-                        <p className="text-white font-medium text-base">访客 #{index + 1}</p>
-                        <p className="text-slate-400 text-sm">{formatTime(v.created_at)}</p>
+                      <div className="min-w-0">
+                        <p className="text-white font-medium text-sm sm:text-base">访客 #{index + 1}</p>
+                        <p className="text-slate-400 text-xs sm:text-sm">{formatTime(v.created_at)}</p>
                       </div>
                     </div>
-                    <div className={`px-4 py-2 rounded-xl text-sm font-semibold ${
+                    <div className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs sm:text-sm font-semibold flex-shrink-0 ${
                       v.status === 'dealed' 
                         ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white' 
                         : v.status === 'added' 
@@ -486,11 +487,11 @@ export default function PromoterDashboard() {
         )}
 
         {/* 底部 */}
-        <div className="mt-8 text-center space-y-2">
+        <div className="mt-6 sm:mt-8 text-center space-y-2">
           <p className="text-slate-500 text-xs">
             最后更新: {lastUpdate.toLocaleTimeString()}
           </p>
-          <p className="text-slate-600 text-sm">玲姐假发 · 专业假发定制</p>
+          <p className="text-slate-600 text-xs sm:text-sm">玲姐假发 · 专业假发定制</p>
         </div>
       </div>
     </div>
