@@ -332,70 +332,79 @@ export default function PromoterDashboard() {
                     <p className="text-slate-400 text-xs mt-1">已返现</p>
                   </div>
                 </div>
-                {/* 奖励规则说明 */}
-                {promoter?.cashbackRuleType === 'type_100' ? (
-                  // 100版本：稳定奖励计划
-                  <div className="mt-4 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 p-4">
-                    <h4 className="font-semibold text-blue-800 mb-2 flex items-center gap-2 text-sm">
-                      <span className="text-lg">💰</span> 稳定奖励计划
-                    </h4>
-                    <div className="bg-blue-100 rounded-lg p-3 mb-3">
-                      <p className="text-blue-900 text-xs font-medium mb-1">📊 收益稳定</p>
-                      <p className="text-blue-700 text-sm">每次消费：100元奖励</p>
-                      <p className="text-blue-700 text-sm">不限制消费次数</p>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2 text-center">
-                      <div className="bg-white rounded-lg p-2">
-                        <p className="text-xs text-gray-500">第1次</p>
-                        <p className="text-base font-bold text-blue-600">100元</p>
-                      </div>
-                      <div className="bg-white rounded-lg p-2">
-                        <p className="text-xs text-gray-500">第2次</p>
-                        <p className="text-base font-bold text-blue-600">100元</p>
-                      </div>
-                      <div className="bg-white rounded-lg p-2">
-                        <p className="text-xs text-gray-500">第3次</p>
-                        <p className="text-base font-bold text-blue-600">100元</p>
-                      </div>
-                    </div>
-                    <p className="text-blue-600 text-xs mt-3 text-center">⭐ 适合稳定分享</p>
-                  </div>
-                ) : (
-                  // 300版本：奖励规则
-                  <div className="mt-4 rounded-xl bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 p-4">
-                    <h4 className="font-semibold text-purple-800 mb-2 flex items-center gap-2 text-sm">
-                      <span className="text-lg">🎁</span> 奖励规则
-                    </h4>
-                    <div className="text-purple-700 text-xs mb-2 text-center">每3人一轮，循环计算</div>
-                    <div className="grid grid-cols-3 gap-2 mb-2">
-                      <div className="bg-white rounded-lg p-2 text-center border-2 border-green-400">
-                        <p className="text-xs text-gray-600">第1人</p>
-                        <p className="text-lg font-bold text-green-600">100元</p>
-                      </div>
-                      <div className="bg-white rounded-lg p-2 text-center border-2 border-blue-400">
-                        <p className="text-xs text-gray-600">第2人</p>
-                        <p className="text-lg font-bold text-blue-600">200元</p>
-                      </div>
-                      <div className="bg-white rounded-lg p-2 text-center border-2 border-purple-400">
-                        <p className="text-xs text-gray-600">第3人</p>
-                        <p className="text-lg font-bold text-purple-600">300元</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-center gap-1 mt-3">
-                      <div className="w-3 h-3 rounded-full bg-green-400"></div>
-                      <div className="w-3 h-3 rounded-full bg-blue-400"></div>
-                      <div className="w-3 h-3 rounded-full bg-purple-400"></div>
-                      <div className="w-3 h-3 rounded-full bg-green-400"></div>
-                      <div className="w-3 h-3 rounded-full bg-blue-400"></div>
-                      <div className="w-3 h-3 rounded-full bg-purple-400"></div>
-                    </div>
-                    <p className="text-purple-600 text-xs mt-2 text-center">
-                      您当前位于第 {((stats.verifiedCount - 1) % 3) + 1} 位
-                    </p>
-                  </div>
-                )}
               </div>
             )}
+
+            {/* 奖励规则说明 - 始终显示 */}
+            <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
+              {promoter?.cashbackRuleType === 'type_100' ? (
+                // 100版本：稳定奖励计划
+                <>
+                  <h4 className="font-semibold text-white mb-3 flex items-center gap-2 text-base">
+                    <span className="text-xl">💰</span> 稳定奖励计划
+                  </h4>
+                  <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 rounded-xl p-4 mb-3 border border-blue-400/20">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-lg">📊</span>
+                      <p className="text-blue-200 text-sm font-semibold">收益稳定</p>
+                    </div>
+                    <p className="text-blue-100 text-base">每次消费：100元奖励</p>
+                    <p className="text-blue-100 text-base">不限制消费次数</p>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3 mb-3">
+                    <div className="bg-white/10 rounded-lg p-3 text-center border border-blue-400/30">
+                      <p className="text-xs text-blue-200">第1次</p>
+                      <p className="text-xl font-bold text-blue-400">100元</p>
+                    </div>
+                    <div className="bg-white/10 rounded-lg p-3 text-center border border-blue-400/30">
+                      <p className="text-xs text-blue-200">第2次</p>
+                      <p className="text-xl font-bold text-blue-400">100元</p>
+                    </div>
+                    <div className="bg-white/10 rounded-lg p-3 text-center border border-blue-400/30">
+                      <p className="text-xs text-blue-200">第3次</p>
+                      <p className="text-xl font-bold text-blue-400">100元</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-center gap-1">
+                    <span className="text-2xl">⭐</span>
+                    <p className="text-blue-200 text-sm">适合稳定分享</p>
+                  </div>
+                </>
+              ) : (
+                // 300版本：奖励规则
+                <>
+                  <h4 className="font-semibold text-white mb-3 flex items-center gap-2 text-base">
+                    <span className="text-xl">🎁</span> 奖励规则
+                  </h4>
+                  <div className="text-purple-200 text-sm mb-3 text-center">每3人一轮，循环计算</div>
+                  <div className="grid grid-cols-3 gap-3 mb-3">
+                    <div className="bg-white/10 rounded-lg p-3 text-center border-2 border-green-400">
+                      <p className="text-xs text-gray-300">第1人</p>
+                      <p className="text-2xl font-bold text-green-400">100元</p>
+                    </div>
+                    <div className="bg-white/10 rounded-lg p-3 text-center border-2 border-blue-400">
+                      <p className="text-xs text-gray-300">第2人</p>
+                      <p className="text-2xl font-bold text-blue-400">200元</p>
+                    </div>
+                    <div className="bg-white/10 rounded-lg p-3 text-center border-2 border-purple-400">
+                      <p className="text-xs text-gray-300">第3人</p>
+                      <p className="text-2xl font-bold text-purple-400">300元</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-center gap-2 mb-3">
+                    <div className="w-4 h-4 rounded-full bg-green-400"></div>
+                    <div className="w-4 h-4 rounded-full bg-blue-400"></div>
+                    <div className="w-4 h-4 rounded-full bg-purple-400"></div>
+                    <div className="w-4 h-4 rounded-full bg-green-400"></div>
+                    <div className="w-4 h-4 rounded-full bg-blue-400"></div>
+                    <div className="w-4 h-4 rounded-full bg-purple-400"></div>
+                  </div>
+                  <p className="text-purple-200 text-sm text-center">
+                    您当前位于第 {((stats.verifiedCount - 1) % 3) + 1} 位
+                  </p>
+                </>
+              )}
+            </div>
 
             {/* 转化率 */}
             {stats.wechatSubmissions > 0 && (
