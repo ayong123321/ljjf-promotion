@@ -29,7 +29,7 @@ export default function PromoterDashboard() {
   const code = params.code as string;
   
   const [loading, setLoading] = useState(true);
-  const [promoter, setPromoter] = useState<{ name: string; code: string } | null>(null);
+  const [promoter, setPromoter] = useState<{ name: string; code: string; cashbackRuleType?: string } | null>(null);
   const [stats, setStats] = useState<Stats>({
     totalVisitors: 0,
     uniqueVisitors: 0,
@@ -333,7 +333,7 @@ export default function PromoterDashboard() {
                   </div>
                 </div>
                 <p className="text-slate-500 text-xs mt-3 text-center">
-                  返现规则：每3人一轮（100元→200元→700元）
+                  返现规则：每3人一轮（{promoter?.cashbackRuleType === 'type_100' ? '100元→200元→100元' : '100元→200元→300元'}）
                 </p>
               </div>
             )}

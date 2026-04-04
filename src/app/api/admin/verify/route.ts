@@ -1,15 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServiceClient } from '@/storage/database/supabase-client';
 
-// 返现规则：每3人一个轮回（100, 200, 700元）
-const CASHBACK_RULES = [100, 200, 700];
+// 定义两种返现规则
+// 300版本：100元 → 200元 → 300元（每3人一轮）
+// 100版本：100元 → 200元 → 100元（每3人一轮）
+const CASHBACK_RULES = {
+  type_300: [100, 200, 300],
+  type_100: [100, 200, 100]
+};
 
 // 计算返现金额
-function calculateCashback(totalVerifiedCount: number): number {
+function calculateCashback(totalVerifiedCount: number, ruleType: string = 'type_300'): number {
   if (totalVerifiedCount < 1) return 0;
   // 每3人一个轮回，循环计算
   const ruleIndex = (totalVerifiedCount - 1) % 3;
-  return CASHBACK_RULES[ruleIndex];
+  const rules = CASHBACK_RULES[ruleType as keyof typeof CASHBACK_RULES] || CASHBACK_RULES.type_300;
+  return rules[ruleIndex];
 }
 
 // GET: 根据核销码查询访客信息
@@ -34,7 +40,8 @@ export async function GET(request: NextRequest) {
         promoters (
           id,
           name,
-          unique_code
+          unique_code,
+          cashback_rule_type
         )
       `)
       .eq('verify_code', code)
@@ -79,7 +86,8 @@ export async function POST(request: NextRequest) {
         promoters (
           id,
           name,
-          unique_code
+          unique_code,
+          cashback_rule_type
         )
       `)
       .eq('verify_code', code)
@@ -105,6 +113,9 @@ export async function POST(request: NextRequest) {
     }
 
     const promoterId = visitorData.promoter_id;
+    const promoterData = visitorData.promoters as Record<string, unknown> || {};
+    // 获取推广者的返现规则类型，默认为 type_300
+    const ruleType = (promoterData.cashback_rule_type as string) || 'type_300';
 
     // 查询该推广者已核销的总人数（包括当前这个）
     const { data: verifiedRecords, error: countError } = await client
@@ -120,14 +131,15 @@ export async function POST(request: NextRequest) {
 
     // 当前是第几个核销的用户（已有核销数 + 1）
     const totalVerifiedCount = (verifiedRecords?.length || 0) + 1;
-    
-    // 计算返现金额
-    const cashbackAmount = calculateCashback(totalVerifiedCount);
 
-    console.log('[POST] 核销统计:', { 
-      totalVerifiedCount, 
+    // 根据推广者的规则类型计算返现金额
+    const cashbackAmount = calculateCashback(totalVerifiedCount, ruleType);
+
+    console.log('[POST] 核销统计:', {
+      totalVerifiedCount,
       cashbackAmount,
-      promoterId 
+      promoterId,
+      ruleType
     });
 
     // 更新访客记录为已核销

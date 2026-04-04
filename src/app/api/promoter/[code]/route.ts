@@ -23,7 +23,7 @@ export async function GET(
     // 获取推广者信息
     const { data: promoter, error: promoterError } = await client
       .from('promoters')
-      .select('id, name, unique_code')
+      .select('id, name, unique_code, cashback_rule_type')
       .eq('unique_code', code)
       .maybeSingle();
     
@@ -37,9 +37,10 @@ export async function GET(
     
     // 格式化推广者数据
     const promoterData = {
-      id: (promoter as { id: number; name: string; unique_code: string }).id,
-      name: (promoter as { id: number; name: string; unique_code: string }).name,
-      code: (promoter as { id: number; name: string; unique_code: string }).unique_code
+      id: (promoter as { id: number; name: string; unique_code: string; cashback_rule_type?: string }).id,
+      name: (promoter as { id: number; name: string; unique_code: string; cashback_rule_type?: string }).name,
+      code: (promoter as { id: number; name: string; unique_code: string; cashback_rule_type?: string }).unique_code,
+      cashbackRuleType: (promoter as { id: number; name: string; unique_code: string; cashback_rule_type?: string }).cashback_rule_type || 'type_300'
     };
     
     // 获取访客记录
