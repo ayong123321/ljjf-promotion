@@ -3,18 +3,24 @@ import { getSupabaseServiceClient } from '@/storage/database/supabase-client';
 
 // 定义两种返现规则
 // 300版本：100元 → 200元 → 300元（每3人一轮）
-// 100版本：100元 → 200元 → 100元（每3人一轮）
+// 100版本：每次核销固定100元
 const CASHBACK_RULES = {
   type_300: [100, 200, 300],
-  type_100: [100, 200, 100]
+  type_100: 100 // 固定100元
 };
 
 // 计算返现金额
 function calculateCashback(totalVerifiedCount: number, ruleType: string = 'type_300'): number {
   if (totalVerifiedCount < 1) return 0;
-  // 每3人一个轮回，循环计算
+
+  // 100版本：固定返回100元
+  if (ruleType === 'type_100') {
+    return 100;
+  }
+
+  // 300版本：每3人一个轮回，循环计算
   const ruleIndex = (totalVerifiedCount - 1) % 3;
-  const rules = CASHBACK_RULES[ruleType as keyof typeof CASHBACK_RULES] || CASHBACK_RULES.type_300;
+  const rules = CASHBACK_RULES.type_300;
   return rules[ruleIndex];
 }
 

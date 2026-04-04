@@ -333,7 +333,7 @@ export default function PromoterDashboard() {
                   </div>
                 </div>
                 <p className="text-slate-500 text-xs mt-3 text-center">
-                  返现规则：每3人一轮（{promoter?.cashbackRuleType === 'type_100' ? '100元→200元→100元' : '100元→200元→300元'}）
+                  返现规则：{promoter?.cashbackRuleType === 'type_100' ? '每次固定返现100元' : '每3人一轮（100元→200元→300元）'}
                 </p>
               </div>
             )}
