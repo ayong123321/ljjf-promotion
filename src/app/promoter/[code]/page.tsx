@@ -72,6 +72,11 @@ export default function PromoterPage() {
 
   const visitors = data.visitorRecords || [];
   const visitorsWithWechat = visitors.filter((v: any) => v.wechat_id);
+  
+  // 计算已核销人数
+  const verifiedCount = data.stats?.verifiedCount || 0;
+  // 计算当前位置（每3人一轮，循环计算）
+  const currentPosition = verifiedCount % 3;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-900">
@@ -139,6 +144,49 @@ export default function PromoterPage() {
             <p className="text-white text-2xl sm:text-3xl font-bold">{data.stats?.wechatSubmissions || 0}</p>
             <p className="text-white/80 text-xs sm:text-sm mt-1">留微信号</p>
           </div>
+        </div>
+
+        {/* 奖励规则 */}
+        <div className="mb-5 rounded-2xl bg-white/5 border border-white/10 p-4 sm:p-5">
+          {/* 标题 */}
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-2xl sm:text-3xl">🎁</span>
+            <h2 className="text-white font-semibold text-base sm:text-lg">奖励规则</h2>
+          </div>
+
+          {/* 规则说明 */}
+          <p className="text-slate-400 text-xs sm:text-sm mb-4 text-center">每3人一轮，循环计算</p>
+
+          {/* 三个卡片 */}
+          <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-4">
+            <div className="rounded-xl bg-white/5 p-3 sm:p-4 text-center border-2 border-green-400">
+              <p className="text-slate-400 text-xs sm:text-sm mb-2">第1人</p>
+              <p className="text-green-400 text-xl sm:text-2xl font-bold">100元</p>
+            </div>
+            <div className="rounded-xl bg-white/5 p-3 sm:p-4 text-center border-2 border-blue-400">
+              <p className="text-slate-400 text-xs sm:text-sm mb-2">第2人</p>
+              <p className="text-blue-400 text-xl sm:text-2xl font-bold">200元</p>
+            </div>
+            <div className="rounded-xl bg-white/5 p-3 sm:p-4 text-center border-2 border-purple-400">
+              <p className="text-slate-400 text-xs sm:text-sm mb-2">第3人</p>
+              <p className="text-purple-400 text-xl sm:text-2xl font-bold">300元</p>
+            </div>
+          </div>
+
+          {/* 轮次标识点 */}
+          <div className="flex items-center justify-center gap-1.5 sm:gap-2 mb-3">
+            <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-green-400"></div>
+            <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-blue-400"></div>
+            <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-purple-400"></div>
+            <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-green-400"></div>
+            <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-blue-400"></div>
+            <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-purple-400"></div>
+          </div>
+
+          {/* 当前位置 */}
+          <p className="text-slate-400 text-xs sm:text-sm text-center">
+            您当前位于第 {currentPosition} 位
+          </p>
         </div>
 
         {/* 留微信号的访客 */}
