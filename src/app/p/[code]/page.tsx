@@ -477,50 +477,92 @@ export default function PromotionPage() {
                 </p>
               </div>
             )}
+            {/* 全屏弹窗 - 提交成功后显示 */}
             {submitted ? (
-              <div className="text-center py-4">
-                <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-3" />
-                <p className="text-lg font-medium text-green-600">提交成功！</p>
-                <p className="text-gray-600 mt-1 mb-4">我们会尽快联系您，到店记得领取礼品哦～</p>
-                
-                {/* 核销二维码 */}
-                {verifyCode && (
-                  <div className="mt-4 p-4 bg-gradient-to-br from-pink-50 to-orange-50 rounded-xl border-2 border-pink-200">
-                    <p className="text-sm text-gray-600 mb-3">到店出示以下二维码，可享受专属优惠</p>
-                    
-                    {/* 二维码 */}
-                    <div className="flex justify-center mb-3">
-                      <div className="p-3 bg-white rounded-lg shadow-md">
+              <div className="fixed inset-0 z-50 flex flex-col items-center justify-center p-4 bg-gradient-to-br from-orange-500 via-red-500 to-pink-500">
+                {/* 顶部跑马灯提示 */}
+                <div className="w-full overflow-hidden bg-yellow-400 py-3 mb-4 shadow-lg">
+                  <div className="animate-marquee whitespace-nowrap">
+                    <span className="text-xl font-bold text-red-600 mx-8">
+                      请截图保存二维码 请截图保存二维码 请截图保存二维码 请截图保存二维码 请截图保存二维码
+                    </span>
+                  </div>
+                </div>
+
+                {/* 主内容区域 */}
+                <div className="flex-1 flex flex-col items-center justify-center w-full max-w-lg">
+                  {/* 成功图标 */}
+                  <div className="mb-4">
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-white rounded-full blur-xl opacity-50 animate-ping"></div>
+                      <CheckCircle className="h-16 w-16 text-white relative z-10 drop-shadow-lg" />
+                    </div>
+                  </div>
+
+                  {/* 主标题 */}
+                  <h2 className="text-2xl font-bold text-white text-center mb-4 drop-shadow-lg animate-bounce">
+                    提交成功！
+                  </h2>
+
+                  {/* 二维码容器 */}
+                  {verifyCode && (
+                    <div className="relative mb-4">
+                      {/* 闪光背景 */}
+                      <div className="absolute -inset-4 bg-gradient-to-r from-yellow-300 via-white to-yellow-300 rounded-3xl blur-xl opacity-60 animate-pulse"></div>
+
+                      {/* 二维码卡片 */}
+                      <div className="relative bg-white p-4 rounded-2xl shadow-2xl">
                         {qrCodeUrl ? (
-                          <img src={qrCodeUrl} alt="核销二维码" className="w-[200px] h-[200px]" />
+                          <img 
+                            src={qrCodeUrl} 
+                            alt="核销二维码" 
+                            className="w-[280px] h-[280px] sm:w-[320px] sm:h-[320px]" 
+                          />
                         ) : (
-                          <div className="w-[200px] h-[200px] flex items-center justify-center">
-                            <div className="animate-spin text-pink-500">⏳</div>
+                          <div className="w-[280px] h-[280px] sm:w-[320px] sm:h-[320px] flex items-center justify-center">
+                            <div className="animate-spin text-4xl">⏳</div>
                           </div>
                         )}
                       </div>
+
+                      {/* 核销码 */}
+                      <div className="mt-4 text-center">
+                        <p className="text-white/80 text-sm">核销码</p>
+                        <p className="font-mono font-bold text-white text-2xl tracking-widest">{verifyCode}</p>
+                      </div>
                     </div>
-                    
-                    {/* 核销码 */}
-                    <p className="text-xs text-gray-500 mb-3">
-                      核销码：<span className="font-mono font-bold text-pink-600 text-lg">{verifyCode}</span>
-                    </p>
-                    
-                    {/* 保存按钮 */}
-                    {qrCodeUrl && (
-                      <Button
-                        onClick={downloadQRCode}
-                        variant="outline"
-                        className="w-full border-pink-300 text-pink-600 hover:bg-pink-50"
-                      >
-                        <Download className="h-4 w-4 mr-2" />
-                        保存二维码到手机
-                      </Button>
-                    )}
-                    
-                    <p className="text-xs text-gray-400 mt-2">提示：长按二维码图片也可保存</p>
+                  )}
+
+                  {/* 底部醒目提示 - 跑马灯 */}
+                  <div className="w-full overflow-hidden bg-white/20 backdrop-blur-sm rounded-xl py-4 mt-4">
+                    <div className="animate-marquee-slow whitespace-nowrap">
+                      <span className="text-xl font-bold text-yellow-200 mx-8">
+                        请截图二维码，到店核销立省100元 请截图二维码，到店核销立省100元
+                      </span>
+                    </div>
                   </div>
-                )}
+
+                  {/* 底部文字 */}
+                  <p className="text-white/90 text-center mt-4 text-lg font-medium drop-shadow">
+                    到店出示此码，享受专属优惠
+                  </p>
+
+                  {/* 保存按钮 */}
+                  {qrCodeUrl && (
+                    <Button
+                      onClick={downloadQRCode}
+                      className="mt-6 bg-white text-red-600 hover:bg-yellow-100 text-lg px-8 py-6 font-bold shadow-xl animate-pulse"
+                    >
+                      <Download className="h-6 w-6 mr-2" />
+                      保存二维码到相册
+                    </Button>
+                  )}
+                </div>
+
+                {/* 底部装饰 */}
+                <div className="w-full py-3 text-center">
+                  <p className="text-white/70 text-sm">长按二维码图片也可保存</p>
+                </div>
               </div>
             ) : (
               <form onSubmit={handleSubmitWechat} className="space-y-4">
