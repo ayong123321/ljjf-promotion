@@ -466,6 +466,17 @@ export default function PromotionPage() {
             </h2>
           </div>
           <CardContent className="p-6">
+            {/* 醒目的闪动提示 - 仅在未提交时显示 */}
+            {!submitted && (
+              <div className="mb-4 p-3 bg-gradient-to-r from-yellow-100 via-yellow-200 to-yellow-100 rounded-lg border-2 border-yellow-400 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-300/30 to-transparent animate-shimmer"></div>
+                <p className="text-center text-lg font-bold text-red-600 relative animate-pulse">
+                  <span className="inline-block animate-bounce">🔥</span>
+                  {' '}留微信到店立省100元{' '}
+                  <span className="inline-block animate-bounce">🔥</span>
+                </p>
+              </div>
+            )}
             {submitted ? (
               <div className="text-center py-4">
                 <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-3" />
