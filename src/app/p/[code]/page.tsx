@@ -480,79 +480,55 @@ export default function PromotionPage() {
             {/* 全屏弹窗 - 提交成功后显示 */}
             {submitted ? (
               <div className="fixed inset-0 z-50 flex flex-col items-center justify-center p-4 bg-gradient-to-br from-orange-500 via-red-500 to-pink-500">
-                {/* 顶部跑马灯提示 - 修复文字显示不全 */}
-                <div className="w-full bg-yellow-400 py-4 px-0 mb-4 shadow-lg">
-                  <div className="w-full overflow-hidden">
-                    <div className="animate-marquee whitespace-nowrap leading-relaxed">
-                      <span className="text-2xl font-bold text-red-600 px-4">
-                        请截图保存二维码 请截图保存二维码 请截图保存二维码 请截图保存二维码 请截图保存二维码
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 主内容区域 */}
-                <div className="flex-1 flex flex-col items-center justify-center w-full max-w-lg">
-                  {/* 成功图标 */}
-                  <div className="mb-4">
-                    <div className="relative">
-                      <div className="absolute inset-0 bg-white rounded-full blur-xl opacity-50 animate-ping"></div>
-                      <CheckCircle className="h-16 w-16 text-white relative z-10 drop-shadow-lg" />
-                    </div>
-                  </div>
-
-                  {/* 主标题 */}
-                  <h2 className="text-2xl font-bold text-white text-center mb-4 drop-shadow-lg animate-bounce">
-                    提交成功！
-                  </h2>
-
-                  {/* 二维码容器 */}
-                  {verifyCode && (
-                    <div className="relative mb-4">
-                      {/* 闪光背景 */}
-                      <div className="absolute -inset-4 bg-gradient-to-r from-yellow-300 via-white to-yellow-300 rounded-3xl blur-xl opacity-60 animate-pulse"></div>
-
-                      {/* 二维码卡片 */}
-                      <div className="relative bg-white p-4 rounded-2xl shadow-2xl">
-                        {qrCodeUrl ? (
-                          <img 
-                            src={qrCodeUrl} 
-                            alt="核销二维码" 
-                            className="w-[280px] h-[280px] sm:w-[320px] sm:h-[320px]" 
-                          />
-                        ) : (
-                          <div className="w-[280px] h-[280px] sm:w-[320px] sm:h-[320px] flex items-center justify-center">
-                            <div className="animate-spin text-4xl">⏳</div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* 核销码 */}
-                      <div className="mt-4 text-center">
-                        <p className="text-white/80 text-sm">核销码</p>
-                        <p className="font-mono font-bold text-white text-2xl tracking-widest">{verifyCode}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* 底部醒目提示 - 两行静态闪光字 */}
-                  <div className="w-full mt-4 space-y-3">
+                {/* 主内容区域 - 紧凑布局 */}
+                <div className="flex flex-col items-center justify-center w-full max-w-lg space-y-4">
+                  {/* 两行醒目提示 - 放在二维码上方 */}
+                  <div className="w-full space-y-2">
                     {/* 第一行 */}
-                    <div className="w-full bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-400 rounded-xl py-4 text-center shadow-lg">
-                      <span className="text-3xl sm:text-4xl font-bold text-red-600 animate-pulse drop-shadow-lg">
+                    <div className="w-full bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-400 rounded-xl py-3 text-center shadow-lg">
+                      <span className="text-2xl sm:text-3xl font-bold text-red-600 animate-pulse drop-shadow-lg">
                         请截图二维码
                       </span>
                     </div>
                     {/* 第二行 */}
-                    <div className="w-full bg-gradient-to-r from-white/30 via-white/40 to-white/30 backdrop-blur-sm rounded-xl py-4 text-center shadow-lg">
-                      <span className="text-3xl sm:text-4xl font-bold text-white animate-pulse drop-shadow-lg">
+                    <div className="w-full bg-white/30 backdrop-blur-sm rounded-xl py-3 text-center shadow-lg">
+                      <span className="text-2xl sm:text-3xl font-bold text-white animate-pulse drop-shadow-lg">
                         到店核销立省100元
                       </span>
                     </div>
                   </div>
 
+                  {/* 二维码容器 */}
+                  {verifyCode && (
+                    <div className="relative">
+                      {/* 闪光背景 */}
+                      <div className="absolute -inset-3 bg-gradient-to-r from-yellow-300 via-white to-yellow-300 rounded-2xl blur-lg opacity-50 animate-pulse"></div>
+
+                      {/* 二维码卡片 */}
+                      <div className="relative bg-white p-3 rounded-xl shadow-2xl">
+                        {qrCodeUrl ? (
+                          <img 
+                            src={qrCodeUrl} 
+                            alt="核销二维码" 
+                            className="w-[240px] h-[240px] sm:w-[280px] sm:h-[280px]" 
+                          />
+                        ) : (
+                          <div className="w-[240px] h-[240px] sm:w-[280px] sm:h-[280px] flex items-center justify-center">
+                            <div className="animate-spin text-3xl">⏳</div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 核销码 */}
+                      <div className="mt-3 text-center">
+                        <p className="text-white/80 text-sm">核销码</p>
+                        <p className="font-mono font-bold text-white text-xl tracking-widest">{verifyCode}</p>
+                      </div>
+                    </div>
+                  )}
+
                   {/* 底部文字 */}
-                  <p className="text-white/90 text-center mt-4 text-lg font-medium drop-shadow">
+                  <p className="text-white/90 text-center text-base font-medium drop-shadow">
                     到店出示此码，享受专属优惠
                   </p>
 
@@ -560,16 +536,16 @@ export default function PromotionPage() {
                   {qrCodeUrl && (
                     <Button
                       onClick={downloadQRCode}
-                      className="mt-6 bg-white text-red-600 hover:bg-yellow-100 text-lg px-8 py-6 font-bold shadow-xl animate-pulse"
+                      className="bg-white text-red-600 hover:bg-yellow-100 text-base px-6 py-4 font-bold shadow-xl animate-pulse"
                     >
-                      <Download className="h-6 w-6 mr-2" />
+                      <Download className="h-5 w-5 mr-2" />
                       保存二维码到相册
                     </Button>
                   )}
                 </div>
 
-                {/* 底部装饰 */}
-                <div className="w-full py-3 text-center">
+                {/* 底部提示 */}
+                <div className="mt-4 text-center">
                   <p className="text-white/70 text-sm">长按二维码图片也可保存</p>
                 </div>
               </div>
