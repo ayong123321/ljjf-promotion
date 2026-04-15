@@ -181,6 +181,15 @@ body {
   }
 }
 
+@keyframes marquee-reverse {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
 @keyframes gradient {
   0%, 100% {
     background-position: 0% 50%;
@@ -200,6 +209,10 @@ body {
 
 .animate-marquee-slow {
   animation: marquee-slow 12s linear infinite;
+}
+
+.animate-marquee-reverse {
+  animation: marquee-reverse 8s linear infinite;
 }
 
 .animate-gradient {

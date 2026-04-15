@@ -480,12 +480,14 @@ export default function PromotionPage() {
             {/* 全屏弹窗 - 提交成功后显示 */}
             {submitted ? (
               <div className="fixed inset-0 z-50 flex flex-col items-center justify-center p-4 bg-gradient-to-br from-orange-500 via-red-500 to-pink-500">
-                {/* 顶部跑马灯提示 */}
-                <div className="w-full overflow-hidden bg-yellow-400 py-3 mb-4 shadow-lg">
-                  <div className="animate-marquee whitespace-nowrap">
-                    <span className="text-xl font-bold text-red-600 mx-8">
-                      请截图保存二维码 请截图保存二维码 请截图保存二维码 请截图保存二维码 请截图保存二维码
-                    </span>
+                {/* 顶部跑马灯提示 - 修复文字显示不全 */}
+                <div className="w-full bg-yellow-400 py-4 px-0 mb-4 shadow-lg">
+                  <div className="w-full overflow-hidden">
+                    <div className="animate-marquee whitespace-nowrap leading-relaxed">
+                      <span className="text-2xl font-bold text-red-600 px-4">
+                        请截图保存二维码 请截图保存二维码 请截图保存二维码 请截图保存二维码 请截图保存二维码
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -533,12 +535,29 @@ export default function PromotionPage() {
                     </div>
                   )}
 
-                  {/* 底部醒目提示 - 跑马灯 */}
-                  <div className="w-full overflow-hidden bg-white/20 backdrop-blur-sm rounded-xl py-4 mt-4">
-                    <div className="animate-marquee-slow whitespace-nowrap">
-                      <span className="text-xl font-bold text-yellow-200 mx-8">
-                        请截图二维码，到店核销立省100元 请截图二维码，到店核销立省100元
-                      </span>
+                  {/* 底部醒目提示 - 两行闪烁跑马灯 */}
+                  <div className="w-full mt-4 space-y-2">
+                    {/* 第一行 */}
+                    <div className="w-full bg-white/20 backdrop-blur-sm overflow-hidden rounded-lg">
+                      <div className="animate-marquee whitespace-nowrap">
+                        <span className="text-3xl font-bold text-yellow-300 animate-pulse inline-block px-4">
+                          请截图二维码，请截图二维码
+                        </span>
+                        <span className="text-3xl font-bold text-yellow-300 animate-pulse inline-block px-4">
+                          请截图二维码，请截图二维码
+                        </span>
+                      </div>
+                    </div>
+                    {/* 第二行 */}
+                    <div className="w-full bg-white/25 backdrop-blur-sm overflow-hidden rounded-lg">
+                      <div className="animate-marquee-reverse whitespace-nowrap">
+                        <span className="text-3xl font-bold text-white animate-pulse inline-block px-4">
+                          到店核销立省100元，到店核销立省100元
+                        </span>
+                        <span className="text-3xl font-bold text-white animate-pulse inline-block px-4">
+                          到店核销立省100元，到店核销立省100元
+                        </span>
+                      </div>
                     </div>
                   </div>
 
