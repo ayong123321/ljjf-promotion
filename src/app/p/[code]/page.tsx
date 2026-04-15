@@ -535,29 +535,19 @@ export default function PromotionPage() {
                     </div>
                   )}
 
-                  {/* 底部醒目提示 - 两行闪烁跑马灯 */}
-                  <div className="w-full mt-4 space-y-2">
+                  {/* 底部醒目提示 - 两行静态闪光字 */}
+                  <div className="w-full mt-4 space-y-3">
                     {/* 第一行 */}
-                    <div className="w-full bg-white/20 backdrop-blur-sm overflow-hidden rounded-lg">
-                      <div className="animate-marquee whitespace-nowrap">
-                        <span className="text-3xl font-bold text-yellow-300 animate-pulse inline-block px-4">
-                          请截图二维码，请截图二维码
-                        </span>
-                        <span className="text-3xl font-bold text-yellow-300 animate-pulse inline-block px-4">
-                          请截图二维码，请截图二维码
-                        </span>
-                      </div>
+                    <div className="w-full bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-400 rounded-xl py-4 text-center shadow-lg">
+                      <span className="text-3xl sm:text-4xl font-bold text-red-600 animate-pulse drop-shadow-lg">
+                        请截图二维码
+                      </span>
                     </div>
                     {/* 第二行 */}
-                    <div className="w-full bg-white/25 backdrop-blur-sm overflow-hidden rounded-lg">
-                      <div className="animate-marquee-reverse whitespace-nowrap">
-                        <span className="text-3xl font-bold text-white animate-pulse inline-block px-4">
-                          到店核销立省100元，到店核销立省100元
-                        </span>
-                        <span className="text-3xl font-bold text-white animate-pulse inline-block px-4">
-                          到店核销立省100元，到店核销立省100元
-                        </span>
-                      </div>
+                    <div className="w-full bg-gradient-to-r from-white/30 via-white/40 to-white/30 backdrop-blur-sm rounded-xl py-4 text-center shadow-lg">
+                      <span className="text-3xl sm:text-4xl font-bold text-white animate-pulse drop-shadow-lg">
+                        到店核销立省100元
+                      </span>
                     </div>
                   </div>
 
